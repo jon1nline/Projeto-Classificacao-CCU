@@ -75,11 +75,27 @@ def build_patient_text(paciente):
 
     ultimo_dna = paciente.exames_dna_hpv.order_by('-data_exame').first()
     if ultimo_dna:
-        partes.append(
-            f"Exame DNA-HPV {ultimo_dna.data_exame}: {ultimo_dna.get_tipo_hpv_display()}, resultado: {ultimo_dna.resultado}."
-        )
+        # Gerar texto claro para NER detectar HPV
+        tipo_hpv_display = ultimo_dna.get_tipo_hpv_display()
+        
+        # Resultado positivo com tipo de HPV específico
+        if ultimo_dna.resultado.upper() in ['POSITIVO', 'POSITIVA', 'REAGENTE']:
+            partes.append(f"Teste de DNA-HPV positivo para {tipo_hpv_display}.")
+        else:
+            partes.append(f"DNA-HPV: {tipo_hpv_display}, resultado {ultimo_dna.resultado}.")
+        
+        # Carga viral com classificação
         if ultimo_dna.carga_viral:
-            partes.append(f"Carga viral: {ultimo_dna.carga_viral}.")
+            try:
+                valor = float(str(ultimo_dna.carga_viral).replace(',', '.').replace(' ', ''))
+                if valor >= 1000:
+                    partes.append(f"Carga viral alta detectada: {ultimo_dna.carga_viral} cópias.")
+                elif valor >= 100:
+                    partes.append(f"Carga viral moderada: {ultimo_dna.carga_viral} cópias.")
+                else:
+                    partes.append(f"Baixa carga viral: {ultimo_dna.carga_viral} cópias.")
+            except (ValueError, TypeError):
+                partes.append(f"Carga viral: {ultimo_dna.carga_viral}.")
 
     ultimo_cito = paciente.citopatologicos.order_by('-data_exame').first()
     if ultimo_cito:

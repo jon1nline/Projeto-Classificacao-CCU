@@ -165,19 +165,19 @@ def classificar_paciente_historico_reprodutivo(sender, instance, created, **kwar
 
 @receiver(post_save, sender=Vacinacao, dispatch_uid='classificar_paciente_vacinacao')
 def classificar_paciente_vacinacao(sender, instance, created, **kwargs):
-    print(f"[SIGNAL] post_save Vacinacao disparado - created={created}")
+    print(f"[SIGNAL] 💉 Vacinacao {'CRIADA' if created else 'ATUALIZADA'} - Reclassificando paciente {instance.paciente.nome}")
     _classificar_paciente(instance.paciente)
 
 
 @receiver(post_save, sender=ExameDnaHpv, dispatch_uid='classificar_paciente_exame_dna')
 def classificar_paciente_exame_dna(sender, instance, created, **kwargs):
-    print(f"[SIGNAL] post_save ExameDnaHpv disparado - created={created}")
+    print(f"[SIGNAL] 🧬 ExameDnaHpv {'CRIADO' if created else 'ATUALIZADO'} - HPV: {instance.tipo_hpv} - Reclassificando paciente {instance.paciente.nome}")
     _classificar_paciente(instance.paciente)
 
 
 @receiver(post_save, sender=CitopatologicoHistorico, dispatch_uid='classificar_paciente_citopatologico')
 def classificar_paciente_citopatologico(sender, instance, created, **kwargs):
-    print(f"[SIGNAL] post_save CitopatologicoHistorico disparado - created={created}")
+    print(f"[SIGNAL] 🔬 Citopatológico {'CRIADO' if created else 'ATUALIZADO'} - Resultado: {instance.resultado} - Reclassificando paciente {instance.paciente.nome}")
     _classificar_paciente(instance.paciente)
 
 
