@@ -145,10 +145,9 @@ def _classificar_paciente(paciente):
 @receiver(post_save, sender=Paciente, dispatch_uid='classificar_paciente_paciente')
 def classificar_paciente_sender(sender, instance, created, **kwargs):
     print(f"[SIGNAL] post_save Paciente disparado - created={created}, paciente={instance.nome}")
-    if created:
-        print(f"[SIGNAL] Ignorando - paciente recém-criado")
-        return
-    print(f"[SIGNAL] Processando edição do paciente...")
+    # Sempre classifica o paciente, mesmo quando recém-criado
+    # Isso garante que a classificação aconteça se o paciente foi criado com dados já preenchidos
+    print(f"[SIGNAL] Processando {'criação' if created else 'edição'} do paciente...")
     _classificar_paciente(instance)
 
 
