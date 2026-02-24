@@ -1,3 +1,16 @@
+---
+title: Projeto Neila
+emoji: 🏥
+colorFrom: blue
+colorTo: red
+sdk: docker
+pinned: false
+---
+
+# Projeto Neila - Análise de Risco de Câncer Cervical
+Este é um projeto Django rodando em Docker no Hugging Face Spaces.
+
+
 # Neila - Sistema de Classificação de Risco CCU
 
 Sistema de classificação de risco para rastreamento de câncer do colo do útero baseado em **Named Entity Recognition (NER)** com integração de fatores de vulnerabilidade social.
