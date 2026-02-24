@@ -190,6 +190,38 @@ TRAINING_DATA = [
     ("Idade: 26 anos. Número de parceiros: 15. Múltiplos parceiros sexuais ao longo da vida", {
         "entities": [(0, 14, "BEHAVIORAL"), (16, 39, "BEHAVIORAL"), (40, 88, "BEHAVIORAL")]
     }),
+    
+    # Exemplos adicionais para melhorar diferenciação VIRAL_LOAD vs SOCIAL_FACTOR
+    ("Carga viral elevada com 5 log cópias por mililitro", {
+        "entities": [(0, 19, "VIRAL_LOAD"), (25, 51, "VIRAL_LOAD")]
+    }),
+    ("Teste de DNA-HPV com carga viral baixa e negativo", {
+        "entities": [(9, 31, "VIRAL_LOAD"), (36, 44, "VIRAL_LOAD")]
+    }),
+    ("Carga viral indetectável após tratamento antiviral", {
+        "entities": [(0, 23, "VIRAL_LOAD")]
+    }),
+    ("HPV com carga viral alta de 6 log", {
+        "entities": [(0, 3, "HPV_TYPE"), (10, 34, "VIRAL_LOAD")]
+    }),
+    ("Paciente com baixa escolaridade apresenta HPV", {
+        "entities": [(14, 32, "SOCIAL_FACTOR"), (42, 45, "HPV_TYPE")]
+    }),
+    ("Baixa escolaridade não é carga viral", {
+        "entities": [(0, 18, "SOCIAL_FACTOR")]
+    }),
+    ("Fatores de vulnerabilidade social: escolaridade baixa, renda insuficiente", {
+        "entities": [(0, 32, "SOCIAL_FACTOR"), (34, 52, "SOCIAL_FACTOR"), (54, 73, "SOCIAL_FACTOR")]
+    }),
+    ("Carga viral medida em log de cópias", {
+        "entities": [(0, 36, "VIRAL_LOAD")]
+    }),
+    ("Nível de escolaridade: primeira série", {
+        "entities": [(0, 20, "SOCIAL_FACTOR")]
+    }),
+    ("Carga viral de 4.5 milhões de cópias", {
+        "entities": [(0, 36, "VIRAL_LOAD")]
+    }),
 ]
 
 
@@ -383,9 +415,19 @@ def extract_entities(text):
                     continue
             
             elif ent.label_ == "VIRAL_LOAD":
-                # Carga viral deve conter termos específicos
-                termos_carga = ['CARGA', 'VIRAL', 'ALTA', 'BAIXA', 'ELEVADA', 'COPIAS']
+                # Carga viral deve conter termos específicos E ter contexto médico
+                # Rejeita  entidades que parecem ser fatores sociais
+                termos_carga = ['CARGA', 'VIRAL', 'COPIAS', 'LOG', 'UNDETECTABLE']
+                # Rejeita palavras que indicam fatores sociais
+                rejeitar_se_contem = ['ESCOLAR', 'SOCIAL', 'RENDA', 'EDUCACAO', 'ANALFABET', 
+                                     'PARCEIROS', 'IDADE', 'ATIVIDADE', 'SEXUALIDADE']
+                
+                # Deve conter um termo de carga viral
                 if not any(termo in entity_text.upper() for termo in termos_carga):
+                    continue
+                
+                # NÃO deve conter palavras de fatores sociais
+                if any(rejeitar in entity_text.upper() for rejeitar in rejeitar_se_contem):
                     continue
             
             elif ent.label_ == "EXAM":
@@ -403,8 +445,14 @@ def extract_entities(text):
                     continue
             
             elif ent.label_ == "SOCIAL_FACTOR":
-                # Fatores sociais (não precisa validação rígida)
-                pass
+                # Fatores sociais: validação básica para não deixar passar entidades vazias
+                # Palavras-chave que caracterizam fatores sociais
+                palavras_validas = ['ESCOLAR', 'SOCIAL', 'RENDA', 'VULNERABIL', 'EDUCACAO', 
+                                   'ANALFABET', 'POBREZA', 'INDIGENA', 'NEGRA', 'PARDA', 
+                                   'MIGRANTE', 'REFUGIADA', 'TRABALHO', 'POBRE', 'CARENTE',
+                                   'DESFAVORAVEL', 'DIFICULDADE', 'ACESSO', 'SERVIÇO']
+                if not any(palavra in entity_text.upper() for palavra in palavras_validas):
+                    continue
             
             elif ent.label_ == "GEOGRAPHIC":
                 # Fatores geográficos (não precisa validação rígida)
@@ -536,7 +584,8 @@ def classify_risk_by_entities(entities):
     """
     score_clinico = 0
     score_vulnerabilidade = 0
-    justificativas = []
+    justificativas_clinicas = []
+    justificativas_vulnerabilidade = []
     
     # === RISCO CLÍNICO ===
     
@@ -545,7 +594,7 @@ def classify_risk_by_entities(entities):
     for hpv in entities.get('hpv_types', []):
         if any(tipo in hpv.upper() for tipo in hpv_alto_risco):
             score_clinico += 3
-            justificativas.append(f"🦠 HPV alto risco: {hpv}")
+            justificativas_clinicas.append(f"🦠 HPV alto risco: {hpv}")
             break
     
     # Lesões graves
@@ -556,37 +605,46 @@ def classify_risk_by_entities(entities):
     for lesion in entities.get('lesions', []):
         if any(grave in lesion.upper() for grave in lesoes_graves):
             score_clinico += 3
-            justificativas.append(f"⚠️ Lesão grave: {lesion}")
+            justificativas_clinicas.append(f"⚠️ Lesão grave: {lesion}")
             break
         elif any(leve in lesion.upper() for leve in lesoes_leves):
             score_clinico += 1
-            justificativas.append(f"⚠️ Lesão leve: {lesion}")
+            justificativas_clinicas.append(f"⚠️ Lesão leve: {lesion}")
     
     # Carga viral
     for viral in entities.get('viral_loads', []):
+        # Validação adicional: rejeita se contém palavras de fatores sociais
+        rejeitar_se_contem = ['ESCOLAR', 'SOCIAL', 'RENDA', 'EDUCACAO', 'PARCEIRO', 'IDADE']
+        if any(palavra in viral.upper() for palavra in rejeitar_se_contem):
+            continue  # Skip this entry - likely mislabeled
+            
         if any(termo in viral.upper() for termo in ['ALTA', 'HIGH', 'ELEVADA']):
             score_clinico += 2
-            justificativas.append(f"📊 Carga viral alta: {viral}")
+            justificativas_clinicas.append(f"📊 Carga viral alta: {viral}")
         elif any(termo in viral.upper() for termo in ['BAIXA', 'LOW']):
             score_clinico -= 1
-            justificativas.append(f"📊 Carga viral baixa: {viral}")
+            justificativas_clinicas.append(f"📊 Carga viral baixa: {viral}")
+        else:
+            # Se contém "carga viral" mas sem classificação, coloca como detectada
+            if any(t in viral.upper() for t in ['CARGA', 'VIRAL']):
+                justificativas_clinicas.append(f"📊 Carga viral detectada: {viral}")
     
     # Procedimentos realizados indicam necessidade de tratamento
     if entities.get('procedures') and len(entities['procedures']) > 0:
         score_clinico += 2
-        justificativas.append(f"⚕️ Procedimento realizado: {', '.join(entities['procedures'])}")
+        justificativas_clinicas.append(f"⚕️ Procedimento realizado: {', '.join(entities['procedures'])}")
     
     # HPV outros tipos (não alto risco) = risco médio
     if entities.get('hpv_types') and not any(any(tipo in hpv.upper() for tipo in hpv_alto_risco) for hpv in entities.get('hpv_types', [])):
         score_clinico += 1
-        justificativas.append(f"🦠 HPV detectado: {', '.join(entities['hpv_types'])}")
+        justificativas_clinicas.append(f"🦠 HPV detectado: {', '.join(entities['hpv_types'])}")
     
     # === VULNERABILIDADE SOCIAL ===
     
     # Fatores socioeconômicos (+3 pontos) - Desigualdades estruturais
     if entities.get('social_factors'):
         score_vulnerabilidade += 3
-        justificativas.append(f"📚 Vulnerabilidade social: {', '.join(entities['social_factors'][:2])}")
+        justificativas_vulnerabilidade.append(f"📚 Vulnerabilidade social: {', '.join(entities['social_factors'][:2])}")
     
     # Fatores geográficos (+1 ponto) - Desigualdades regionais
     if entities.get('geographic'):
@@ -594,39 +652,59 @@ def classify_risk_by_entities(entities):
         regioes_prioritarias = ['NORTE', 'NORDESTE', 'RURAL', 'DIFICIL ACESSO', 'REMOTA']
         for geo in entities['geographic']:
             if any(reg in geo.upper() for reg in regioes_prioritarias):
-                justificativas.append(f"📍 Região prioritária: {geo}")
+                justificativas_vulnerabilidade.append(f"📍 Região prioritária: {geo}")
                 break
     
     # Fatores comportamentais (+1 ponto) - Risco epidemiológico
     if entities.get('behavioral'):
         score_vulnerabilidade += 1
-        justificativas.append(f"👥 Fator comportamental: {', '.join(entities['behavioral'][:2])}")
+        justificativas_vulnerabilidade.append(f"👥 Fator comportamental: {', '.join(entities['behavioral'][:2])}")
     
     # Perda de seguimento (+1 ponto) - Gargalo do sistema
     if entities.get('follow_up'):
         score_vulnerabilidade += 1
-        justificativas.append(f"⏰ Alerta de seguimento: {', '.join(entities['follow_up'][:2])}")
+        justificativas_vulnerabilidade.append(f"⏰ Alerta de seguimento: {', '.join(entities['follow_up'][:2])}")
     
     # === CLASSIFICAÇÃO FINAL ===
     # Score total combina risco clínico + vulnerabilidade social
     score_total = score_clinico + score_vulnerabilidade
     
-    # Vulnerabilidade social pode elevar um médio risco para alto
+    # Reorganizar justificativas: separar clínicas de vulnerabilidade
+    justificativas = []
+    
+    # Adicionar alert se necessário antes
+    if score_clinico >= 1 and score_vulnerabilidade >= 3:
+        justificativas.append("⚠️ ALERTA: Risco elevado por vulnerabilidade social")
+    
+    # Seção de fatores clínicos
+    if justificativas_clinicas:
+        justificativas.append("🏥 FATORES CLÍNICOS:")
+        justificativas.extend(justificativas_clinicas)
+    
+    # Seção de vulnerabilidade social
+    if justificativas_vulnerabilidade:
+        if justificativas:  # Se já tem algo, adiciona quebra
+            justificativas.append("")
+        justificativas.append("💔 VULNERABILIDADE SOCIAL:")
+        justificativas.extend(justificativas_vulnerabilidade)
+    
+    # Adicionar resumo de scores ao final
+    if score_vulnerabilidade > 0 or score_clinico > 0:
+        if justificativas:  # Se já tem algo, adiciona quebra
+            justificativas.append("")
+        justificativas.append(f"📊 Scores: Clínico {score_clinico} | Social {score_vulnerabilidade} | Total {score_total}")
+    
+    # Determinar nível de risco
     if score_clinico >= 3:
         risco = 'alto'
     elif score_clinico >= 1 and score_vulnerabilidade >= 3:
         risco = 'alto'
-        justificativas.insert(0, "⚠️ ALERTA: Risco elevado por vulnerabilidade social")
     elif score_total >= 3:
         risco = 'medio'
     elif score_total >= 1:
         risco = 'medio'
     else:
         risco = 'baixo'
-    
-    # Adicionar resumo de scores
-    if score_vulnerabilidade > 0:
-        justificativas.append(f"📊 Score Clínico: {score_clinico} | Vulnerabilidade: {score_vulnerabilidade}")
     
     return risco, justificativas, score_total
 
