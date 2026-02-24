@@ -172,6 +172,24 @@ TRAINING_DATA = [
     ("Mulher negra com baixo nível de escolaridade", {
         "entities": [(13, 44, "SOCIAL_FACTOR")]
     }),
+    ("Número de parceiros: 15 ao longo da vida", {
+        "entities": [(0, 23, "BEHAVIORAL")]
+    }),
+    ("Número de parceiros: 8 múltiplos parceiros sexuais", {
+        "entities": [(0, 23, "BEHAVIORAL"), (24, 51, "BEHAVIORAL")]
+    }),
+    ("Parceiros sexuais: 10 ao longo da vida", {
+        "entities": [(0, 23, "BEHAVIORAL")]
+    }),
+    ("Número de parceiros sexuais: 12", {
+        "entities": [(0, 32, "BEHAVIORAL")]
+    }),
+    ("Múltiplos parceiros, número de parceiros: 20", {
+        "entities": [(0, 18, "BEHAVIORAL"), (20, 45, "BEHAVIORAL")]
+    }),
+    ("Idade: 26 anos. Número de parceiros: 15. Múltiplos parceiros sexuais ao longo da vida", {
+        "entities": [(0, 14, "BEHAVIORAL"), (16, 39, "BEHAVIORAL"), (40, 88, "BEHAVIORAL")]
+    }),
 ]
 
 

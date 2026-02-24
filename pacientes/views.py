@@ -2,8 +2,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_http_methods
+from django.http import JsonResponse
 from datetime import date
 import json
+from PyPDF2 import PdfReader
+from io import BytesIO
 from .models import (
     Paciente, HistoricoSexual, HistoricoReprodutivo, Vacinacao,
     ExameDnaHpv, CitopatologicoHistorico, ProcedimentoRealizado, StatusSeguimento
@@ -59,6 +62,22 @@ def detalhes_paciente(request, pk):
     citopatologicos = paciente.citopatologicos.all()
     procedimentos = paciente.procedimentos.all()
     
+    # Extrair dados de carga viral real do banco de dados
+    viral_loads_reais = []
+    for exame in exames_dna:
+        if exame.carga_viral:
+            viral_loads_reais.append(exame.carga_viral)
+    
+    # Extrair fator behavioural: número de parceiros sexuais
+    numero_parceiros = None
+    if historico_sexual and historico_sexual.numero_parceiros is not None:
+        numero_parceiros = historico_sexual.numero_parceiros
+    
+    # Extrair fator behavioral: idade de início da atividade sexual
+    idade_inicio_sexual = None
+    if historico_sexual and historico_sexual.idade_inicio_atividade_sexual is not None:
+        idade_inicio_sexual = historico_sexual.idade_inicio_atividade_sexual
+    
     # Extrair entidades médicas do texto do paciente
     patient_text = build_patient_text(paciente)
     entities = extract_entities(patient_text)
@@ -74,6 +93,9 @@ def detalhes_paciente(request, pk):
         'procedimentos': procedimentos,
         'entities': entities,
         'patient_text': patient_text,
+        'viral_loads_reais': viral_loads_reais,
+        'numero_parceiros': numero_parceiros,
+        'idade_inicio_sexual': idade_inicio_sexual,
     }
     
     return render(request, 'pacientes/detalhes_paciente.html', context)
@@ -397,3 +419,58 @@ def dados_coletados(request):
     }
 
     return render(request, 'pacientes/dados_coletados.html', context)
+
+
+@login_required(login_url='login')
+@require_http_methods(["POST"])
+def processar_pdf_exame(request, pk):
+    """Processa PDF de exame e extrai informações para classificação"""
+    paciente = get_object_or_404(Paciente, pk=pk)
+    
+    if 'pdf_file' not in request.FILES:
+        return JsonResponse({'sucesso': False, 'erro': 'Nenhum arquivo foi enviado'}, status=400)
+    
+    pdf_file = request.FILES['pdf_file']
+    
+    # Validar extensão
+    if not pdf_file.name.endswith('.pdf'):
+        return JsonResponse({'sucesso': False, 'erro': 'Por favor, envie um arquivo PDF'}, status=400)
+    
+    try:
+        # Ler PDF
+        pdf_reader = PdfReader(BytesIO(pdf_file.read()))
+        pdf_text = ""
+        
+        for page_num in range(len(pdf_reader.pages)):
+            page = pdf_reader.pages[page_num]
+            pdf_text += page.extract_text() + "\n"
+        
+        if not pdf_text.strip():
+            return JsonResponse({'sucesso': False, 'erro': 'Não foi possível extrair texto do PDF'}, status=400)
+        
+        # Extrair entidades do PDF
+        entities = extract_entities(pdf_text)
+        
+        # Texto resumido do PDF para logging
+        pdf_preview = pdf_text[:500] if len(pdf_text) > 500 else pdf_text
+        
+        return JsonResponse({
+            'sucesso': True,
+            'mensagem': 'PDF processado com sucesso!',
+            'entidades': {
+                'hpv_types': entities.get('HPV_TYPE', []),
+                'lesions': entities.get('LESION', []),
+                'exams': entities.get('EXAM', []),
+                'procedures': entities.get('PROCEDURE', []),
+                'viral_loads': entities.get('VIRAL_LOAD', []),
+                'social_factors': entities.get('SOCIAL_FACTOR', []),
+                'geographic_factors': entities.get('GEOGRAPHIC', []),
+                'behavioral_factors': entities.get('BEHAVIORAL', []),
+                'follow_up_issues': entities.get('FOLLOW_UP', []),
+                'text_preview': pdf_preview
+            },
+            'total_paginas': len(pdf_reader.pages)
+        })
+    
+    except Exception as e:
+        return JsonResponse({'sucesso': False, 'erro': f'Erro ao processar PDF: {str(e)}'}, status=400)

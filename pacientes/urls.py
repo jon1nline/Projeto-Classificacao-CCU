@@ -7,6 +7,7 @@ urlpatterns = [
     path('novo/', views.novo_paciente, name='novo_paciente'),
     path('<int:pk>/', views.detalhes_paciente, name='detalhes_paciente'),
     path('<int:pk>/editar/', views.editar_paciente, name='editar_paciente'),
+    path('<int:pk>/processar-pdf/', views.processar_pdf_exame, name='processar_pdf_exame'),
     path('<int:pk>/historico-sexual/', views.adicionar_historico_sexual, name='adicionar_historico_sexual'),
     path('<int:pk>/historico-reprodutivo/', views.adicionar_historico_reprodutivo, name='adicionar_historico_reprodutivo'),
     path('<int:pk>/vacinacao/', views.adicionar_vacinacao, name='adicionar_vacinacao'),

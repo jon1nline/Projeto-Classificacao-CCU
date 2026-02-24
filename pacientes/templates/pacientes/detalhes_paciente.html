@@ -275,6 +275,129 @@
         background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
     }
 
+    /* Melhorias para seção NER */
+    .ner-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .ner-summary-card {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        border: 2px solid #bfdbfe;
+        border-radius: 8px;
+        padding: 12px;
+        text-align: center;
+        transition: all 0.3s;
+    }
+
+    .ner-summary-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+        border-color: #3b82f6;
+    }
+
+    .ner-summary-number {
+        font-size: 24px;
+        font-weight: bold;
+        color: #3b82f6;
+        margin-bottom: 4px;
+    }
+
+    .ner-summary-label {
+        font-size: 11px;
+        color: #666;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .entity-card {
+        background: white;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 12px;
+        border-left: 4px solid #667eea;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        transition: all 0.3s;
+    }
+
+    .entity-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transform: translateX(2px);
+    }
+
+    .entity-card.clinical {
+        border-left-color: #3b82f6;
+        background: #f0f9ff;
+    }
+
+    .entity-card.clinical .entity-group-title {
+        color: #3b82f6;
+    }
+
+    .entity-card.social {
+        border-left-color: #ef4444;
+        background: #fef2f2;
+    }
+
+    .entity-card.social .entity-group-title {
+        color: #ef4444;
+    }
+
+    .entities-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    @media (max-width: 768px) {
+        .entities-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .ner-section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 3px solid #667eea;
+    }
+
+    .ner-section-header-title {
+        font-size: 20px;
+        font-weight: bold;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .ner-section-desc {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 15px;
+        padding: 10px;
+        background: #f9fafb;
+        border-radius: 6px;
+        border-left: 4px solid #667eea;
+    }
+
+    .entity-group-headers {
+        font-weight: 600;
+        color: #667eea;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #dbeafe;
+        font-size: 13px;
+    }
+
     .patient-text-preview {
         background: #f9fafb;
         padding: 12px;
@@ -285,6 +408,120 @@
         max-height: 100px;
         overflow-y: auto;
         border-left: 4px solid #7c3aed;
+    }
+
+    .pdf-upload-section {
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        border: 2px dashed #22c55e;
+        border-radius: 12px;
+        padding: 25px;
+        text-align: center;
+        margin: 20px 0;
+        transition: all 0.3s;
+    }
+
+    .pdf-upload-section:hover {
+        border-color: #16a34a;
+        background: linear-gradient(135deg, #f7fee7 0%, #e7f6d5 100%);
+    }
+
+    .pdf-upload-section.drag-over {
+        border-color: #16a34a;
+        background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+        box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);
+    }
+
+    .pdf-upload-input {
+        display: none;
+    }
+
+    .pdf-upload-label {
+        cursor: pointer;
+        display: inline-block;
+    }
+
+    .pdf-upload-button {
+        padding: 12px 24px;
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .pdf-upload-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3);
+    }
+
+    .pdf-upload-button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .pdf-loading {
+        display: none;
+        color: #22c55e;
+        font-weight: 600;
+        margin-top: 10px;
+    }
+
+    .pdf-results {
+        display: none;
+        background: white;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 15px;
+        border-left: 4px solid #22c55e;
+    }
+
+    .pdf-success {
+        color: #16a34a;
+        font-weight: 600;
+        margin-bottom: 15px;
+    }
+
+    .pdf-error {
+        color: #dc2626;
+        font-weight: 600;
+        background: #fee2e2;
+        padding: 12px;
+        border-radius: 6px;
+        margin-top: 10px;
+        border-left: 4px solid #dc2626;
+    }
+
+    .pdf-entities-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        margin-top: 12px;
+    }
+
+    .pdf-entity-box {
+        background: #f9fafb;
+        padding: 10px;
+        border-radius: 6px;
+        border-left: 4px solid #22c55e;
+    }
+
+    .pdf-entity-title {
+        font-weight: 600;
+        color: #333;
+        font-size: 12px;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+        color: #22c55e;
+    }
+
+    .pdf-entity-items {
+        color: #666;
+        font-size: 12px;
+        line-height: 1.6;
     }
 
 </style>
@@ -302,135 +539,208 @@
 </div>
 
 <!-- ENTIDADES MÉDICAS EXTRAÍDAS (NER) -->
-{% if entities.hpv_types or entities.lesions or entities.exams or entities.procedures or entities.viral_loads or entities.social_factors or entities.geographic or entities.behavioral or entities.follow_up %}
+{% if entities.hpv_types or entities.lesions or entities.exams or entities.procedures or viral_loads_reais or entities.social_factors or entities.geographic or entities.behavioral or entities.follow_up or numero_parceiros or idade_inicio_sexual %}
 <div class="ner-section">
-    <div class="ner-title">🔬 Entidades Médicas Identificadas (NER)</div>
-    <p style="font-size: 13px; color: #666; margin-bottom: 15px;">
-        Informações clínicas e sociais extraídas automaticamente do histórico do paciente
-    </p>
+    <div class="ner-section-header">
+        <div class="ner-section-header-title">
+            🔬 Entidades Médicas Identificadas (NER)
+        </div>
+    </div>
+    
+    <div class="ner-section-desc">
+        Informações clínicas e sociais extraídas automaticamente pelo sistema de processamento de linguagem natural baseado em spaCy
+    </div>
+    
+    <!-- RESUMO VISUAL -->
+    {% with clinical_count=entities.hpv_types|length|add:entities.lesions|length|add:entities.exams|length|add:entities.procedures|length|add:viral_loads_reais|length base_social_count=entities.social_factors|length|add:entities.geographic|length|add:entities.behavioral|length|add:entities.follow_up|length %}
+    <div class="ner-summary">
+        <div class="ner-summary-card">
+            <div class="ner-summary-number">{{ clinical_count }}</div>
+            <div class="ner-summary-label">Entidades Clínicas</div>
+        </div>
+        <div class="ner-summary-card">
+            <div class="ner-summary-number">
+                {% if numero_parceiros or idade_inicio_sexual %}
+                    {{ base_social_count|add:1 }}
+                {% else %}
+                    {{ base_social_count }}
+                {% endif %}
+            </div>
+            <div class="ner-summary-label">Fatores Sociais</div>
+        </div>
+        <div class="ner-summary-card">
+            <div class="ner-summary-number">
+                {% if numero_parceiros or idade_inicio_sexual %}
+                    {{ clinical_count|add:base_social_count|add:1 }}
+                {% else %}
+                    {{ clinical_count|add:base_social_count }}
+                {% endif %}
+            </div>
+            <div class="ner-summary-label">Total Identificado</div>
+        </div>
+    </div>
+    {% endwith %}
     
     <!-- SEÇÃO CLÍNICA -->
-    {% if entities.hpv_types or entities.lesions or entities.exams or entities.procedures or entities.viral_loads %}
-    <div style="margin-bottom: 20px;">
-        <div style="font-weight: 600; color: #667eea; margin-bottom: 12px; font-size: 13px; padding: 8px 0; border-bottom: 2px solid #dbeafe;">
+    {% if entities.hpv_types or entities.lesions or entities.exams or entities.procedures or viral_loads_reais %}
+    <div style="margin-bottom: 25px;">
+        <div class="entity-group-headers">
             🧠 Entidades Clínicas
         </div>
         
-        {% if entities.hpv_types %}
-        <div class="entity-group">
-            <div class="entity-group-title">🦠 Tipos de HPV</div>
-            <div class="entity-tags">
-                {% for hpv in entities.hpv_types %}
-                <span class="entity-tag hpv">{{ hpv }}</span>
-                {% endfor %}
+        <div class="entities-grid">
+            {% if entities.hpv_types %}
+            <div class="entity-card clinical">
+                <div class="entity-group-title">🦠 Tipos de HPV</div>
+                <div class="entity-tags">
+                    {% for hpv in entities.hpv_types %}
+                    <span class="entity-tag hpv">{{ hpv }}</span>
+                    {% endfor %}
+                </div>
             </div>
-        </div>
-        {% endif %}
-        
-        {% if entities.lesions %}
-        <div class="entity-group">
-            <div class="entity-group-title">⚠️ Lesões</div>
-            <div class="entity-tags">
-                {% for lesion in entities.lesions %}
-                <span class="entity-tag lesion">{{ lesion }}</span>
-                {% endfor %}
+            {% endif %}
+            
+            {% if entities.lesions %}
+            <div class="entity-card clinical">
+                <div class="entity-group-title">⚠️ Lesões</div>
+                <div class="entity-tags">
+                    {% for lesion in entities.lesions %}
+                    <span class="entity-tag lesion">{{ lesion }}</span>
+                    {% endfor %}
+                </div>
             </div>
-        </div>
-        {% endif %}
-        
-        {% if entities.exams %}
-        <div class="entity-group">
-            <div class="entity-group-title">🔬 Exames</div>
-            <div class="entity-tags">
-                {% for exam in entities.exams %}
-                <span class="entity-tag exam">{{ exam }}</span>
-                {% endfor %}
+            {% endif %}
+            
+            {% if entities.exams %}
+            <div class="entity-card clinical">
+                <div class="entity-group-title">🔬 Exames</div>
+                <div class="entity-tags">
+                    {% for exam in entities.exams %}
+                    <span class="entity-tag exam">{{ exam }}</span>
+                    {% endfor %}
+                </div>
             </div>
-        </div>
-        {% endif %}
-        
-        {% if entities.procedures %}
-        <div class="entity-group">
-            <div class="entity-group-title">⚕️ Procedimentos</div>
-            <div class="entity-tags">
-                {% for proc in entities.procedures %}
-                <span class="entity-tag procedure">{{ proc }}</span>
-                {% endfor %}
+            {% endif %}
+            
+            {% if entities.procedures %}
+            <div class="entity-card clinical">
+                <div class="entity-group-title">⚕️ Procedimentos</div>
+                <div class="entity-tags">
+                    {% for proc in entities.procedures %}
+                    <span class="entity-tag procedure">{{ proc }}</span>
+                    {% endfor %}
+                </div>
             </div>
-        </div>
-        {% endif %}
-        
-        {% if entities.viral_loads %}
-        <div class="entity-group">
-            <div class="entity-group-title">📊 Carga Viral</div>
-            <div class="entity-tags">
-                {% for viral in entities.viral_loads %}
-                <span class="entity-tag viral">{{ viral }}</span>
-                {% endfor %}
+            {% endif %}
+            
+            {% if viral_loads_reais %}
+            <div class="entity-card clinical">
+                <div class="entity-group-title">📊 Carga Viral (DNA-HPV)</div>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    {% for exame in exames_dna %}
+                        {% if exame.carga_viral %}
+                        <div style="background: #f3f4f6; padding: 8px 12px; border-radius: 8px; font-size: 12px; border-left: 3px solid #8b5cf6;">
+                            <div style="color: #666; font-weight: 600;">{{ exame.data_exame|date:"d/m/Y" }}</div>
+                            <div style="color: #333; font-weight: bold; margin-top: 2px;">{{ exame.carga_viral }}</div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
             </div>
+            {% endif %}
         </div>
-        {% endif %}
     </div>
     {% endif %}
     
     <!-- SEÇÃO DE VULNERABILIDADE SOCIAL -->
-    {% if entities.social_factors or entities.geographic or entities.behavioral or entities.follow_up %}
-    <div style="border-top: 2px solid #fecaca; padding-top: 15px;">
-        <div style="font-weight: 600; color: #ef4444; margin-bottom: 12px; font-size: 13px; padding: 8px 0;">
+    {% if entities.social_factors or entities.geographic or entities.behavioral or entities.follow_up or numero_parceiros or idade_inicio_sexual %}
+    <div style="border-top: 2px solid #fecaca; padding-top: 20px;">
+        <div class="entity-group-headers" style="border-bottom-color: #fecaca; color: #ef4444;">
             👥 Fatores de Vulnerabilidade Social
         </div>
         
-        {% if entities.social_factors %}
-        <div class="entity-group">
-            <div class="entity-group-title">📚 Fatores Socioeconômicos</div>
-            <div class="entity-tags">
-                {% for factor in entities.social_factors %}
-                <span class="entity-tag" style="background-color: #fbbf24; color: white; border: none;">{{ factor }}</span>
-                {% endfor %}
+        <div class="entities-grid">
+            {% if entities.social_factors %}
+            <div class="entity-card social">
+                <div class="entity-group-title">📚 Socioeconômicos</div>
+                <div class="entity-tags">
+                    {% for factor in entities.social_factors %}
+                    <span class="entity-tag" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);">{{ factor }}</span>
+                    {% endfor %}
+                </div>
             </div>
-        </div>
-        {% endif %}
-        
-        {% if entities.geographic %}
-        <div class="entity-group">
-            <div class="entity-group-title">📍 Localização Geográfica</div>
-            <div class="entity-tags">
-                {% for geo in entities.geographic %}
-                <span class="entity-tag" style="background-color: #a78bfa; color: white; border: none;">{{ geo }}</span>
-                {% endfor %}
+            {% endif %}
+            
+            {% if entities.geographic %}
+            <div class="entity-card social">
+                <div class="entity-group-title">📍 Geográficos</div>
+                <div class="entity-tags">
+                    {% for geo in entities.geographic %}
+                    <span class="entity-tag" style="background: linear-gradient(135deg, #a78bfa 0%, #9333ea 100%);">{{ geo }}</span>
+                    {% endfor %}
+                </div>
             </div>
-        </div>
-        {% endif %}
-        
-        {% if entities.behavioral %}
-        <div class="entity-group">
-            <div class="entity-group-title">👥 Fatores Comportamentais</div>
-            <div class="entity-tags">
-                {% for behavior in entities.behavioral %}
-                <span class="entity-tag" style="background-color: #60a5fa; color: white; border: none;">{{ behavior }}</span>
-                {% endfor %}
+            {% endif %}
+            
+            {% if entities.behavioral %}
+            <div class="entity-card social">
+                <div class="entity-group-title">👥 Comportamentais</div>
+                <div class="entity-tags">
+                    {% for behavior in entities.behavioral %}
+                    <span class="entity-tag" style="background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);">{{ behavior }}</span>
+                    {% endfor %}
+                </div>
             </div>
-        </div>
-        {% endif %}
-        
-        {% if entities.follow_up %}
-        <div class="entity-group">
-            <div class="entity-group-title">⏰ Problemas de Seguimento</div>
-            <div class="entity-tags">
-                {% for followup in entities.follow_up %}
-                <span class="entity-tag" style="background-color: #ef4444; color: white; border: none;">{{ followup }}</span>
-                {% endfor %}
+            {% endif %}
+            
+            {% if numero_parceiros or idade_inicio_sexual %}
+            <div class="entity-card social">
+                <div class="entity-group-title">💔 Fatores Sexuais e de Risco</div>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    {% if idade_inicio_sexual %}
+                    <div style="background: #f3f4f6; padding: 10px 12px; border-radius: 8px; font-size: 12px; border-left: 3px solid #60a5fa;">
+                        <div style="color: #666; font-weight: 600;">Início Atividade Sexual</div>
+                        <div style="color: #333; font-weight: bold; font-size: 14px; margin-top: 2px;">{{ idade_inicio_sexual }} anos</div>
+                        {% if idade_inicio_sexual < 16 %}
+                        <div style="color: #ef4444; font-size: 11px; margin-top: 4px; font-weight: 600;">⚠️ Início Precoce</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    {% if numero_parceiros %}
+                    <div style="background: #f3f4f6; padding: 10px 12px; border-radius: 8px; font-size: 12px; border-left: 3px solid #60a5fa;">
+                        <div style="color: #666; font-weight: 600;">Número de Parceiros</div>
+                        <div style="color: #333; font-weight: bold; font-size: 14px; margin-top: 2px;">{{ numero_parceiros }}</div>
+                        {% if numero_parceiros > 3 %}
+                        <div style="color: #ef4444; font-size: 11px; margin-top: 4px; font-weight: 600;">⚠️ Múltiplos Parceiros</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
             </div>
+            {% endif %}
+            
+            {% if entities.follow_up %}
+            <div class="entity-card social">
+                <div class="entity-group-title">⏰ Seguimento</div>
+                <div class="entity-tags">
+                    {% for followup in entities.follow_up %}
+                    <span class="entity-tag" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">{{ followup }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
     </div>
     {% endif %}
     
-    <details style="margin-top: 15px;">
-        <summary style="cursor: pointer; color: #667eea; font-size: 13px; font-weight: 600;">
-            📄 Ver texto completo analisado
+    <!-- TEXTO COMPLETO ANALISADO -->
+    <details style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e5e7eb;">
+        <summary style="cursor: pointer; color: #667eea; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; padding: 10px; background: #f9fafb; border-radius: 6px; user-select: none;">
+            <span>📄</span>
+            <span>Ver texto completo analisado</span>
         </summary>
-        <div class="patient-text-preview">
+        <div class="patient-text-preview" style="margin-top: 12px;">
             {{ patient_text }}
         </div>
     </details>
@@ -803,7 +1113,219 @@
     {% endif %}
 </div>
 
+<!-- UPLOAD PDF DE EXAMES -->
+<div class="section">
+    <div class="section-title">📄 Carregar PDF de Exame</div>
+    <div class="pdf-upload-section" id="pdfUploadSection">
+        <div style="margin-bottom: 15px;">
+            <div style="font-size: 32px; margin-bottom: 10px;">📁</div>
+            <div style="font-weight: 600; color: #333; margin-bottom: 5px;">Arraste um PDF aqui ou clique para selecionar</div>
+            <div style="color: #666; font-size: 12px;">Suporta PDFs com resultados de exames de DNA-HPV, Citopatológico e outros</div>
+        </div>
+        
+        <label class="pdf-upload-label" for="pdfFile">
+            <button type="button" class="pdf-upload-button" id="pdfUploadBtn">
+                📂 Selecionar arquivo
+            </button>
+            <input 
+                type="file" 
+                id="pdfFile" 
+                class="pdf-upload-input" 
+                accept=".pdf" 
+                data-patient-id="{{ paciente.pk }}"
+            >
+        </label>
+        
+        <div class="pdf-loading" id="pdfLoading">
+            <div style="margin-top: 10px;">
+                <span style="display: inline-block; animation: spin 1s linear infinite;">⏳</span>
+                Processando PDF...
+            </div>
+        </div>
+        
+        <div class="pdf-results" id="pdfResults">
+            <div class="pdf-success" id="pdfSuccess"></div>
+            
+            <div id="pdfEntitiesContainer">
+                <div style="font-weight: 600; color: #333; margin-bottom: 15px;">Entidades Identificadas:</div>
+                <div class="pdf-entities-grid" id="pdfEntitiesGrid"></div>
+            </div>
+            
+            <div style="margin-top: 15px; font-size: 12px; color: #666;">
+                <strong>Informação:</strong> As entidades identificadas no PDF foram extraídas automaticamente pelo sistema NER. 
+                Você pode editar os dados do paciente para adicionar essas informações ao sistema.
+            </div>
+            
+            <div class="action-buttons" style="margin-top: 15px;">
+                <a href="{% url 'editar_paciente' paciente.pk %}" class="action-btn">✏️ Editar Dados com Informações do PDF</a>
+                <button type="button" id="resetPdfBtn" class="action-btn" style="background: #ef4444;">🔄 Carregar Outro PDF</button>
+            </div>
+            
+            <div class="pdf-error" id="pdfError" style="display: none;"></div>
+        </div>
+    </div>
+</div>
+
 <div style="text-align: center; color: #999; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e0e0e0;">
     <small>Paciente cadastrado em: {{ paciente.criado_em|date:"d/m/Y H:i" }} | Última atualização: {{ paciente.atualizado_em|date:"d/m/Y H:i" }}</small>
 </div>
+
+<style>
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const pdfSection = document.getElementById('pdfUploadSection');
+    const pdfInput = document.getElementById('pdfFile');
+    const pdfBtn = document.getElementById('pdfUploadBtn');
+    const pdfLoading = document.getElementById('pdfLoading');
+    const pdfResults = document.getElementById('pdfResults');
+    const pdfSuccess = document.getElementById('pdfSuccess');
+    const pdfError = document.getElementById('pdfError');
+    const pdfEntitiesGrid = document.getElementById('pdfEntitiesGrid');
+    const resetPdfBtn = document.getElementById('resetPdfBtn');
+    const patientId = pdfInput.dataset.patientId;
+
+    // Drag and drop
+    pdfSection.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        pdfSection.classList.add('drag-over');
+    });
+
+    pdfSection.addEventListener('dragleave', () => {
+        pdfSection.classList.remove('drag-over');
+    });
+
+    pdfSection.addEventListener('drop', (e) => {
+        e.preventDefault();
+        pdfSection.classList.remove('drag-over');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            pdfInput.files = files;
+            processFile();
+        }
+    });
+
+    // Clique no botão
+    pdfBtn.addEventListener('click', () => {
+        pdfInput.click();
+    });
+
+    // Mudança de arquivo
+    pdfInput.addEventListener('change', processFile);
+
+    // Reset
+    resetPdfBtn.addEventListener('click', () => {
+        pdfInput.value = '';
+        pdfResults.style.display = 'none';
+        pdfError.style.display = 'none';
+        pdfLoading.style.display = 'none';
+        pdfEntitiesGrid.innerHTML = '';
+    });
+
+    function processFile() {
+        if (pdfInput.files.length === 0) return;
+
+        const file = pdfInput.files[0];
+        
+        if (!file.name.endsWith('.pdf')) {
+            showError('Por favor, selecione um arquivo PDF válido.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('pdf_file', file);
+
+        pdfLoading.style.display = 'block';
+        pdfResults.style.display = 'none';
+        pdfError.style.display = 'none';
+
+        fetch(`/pacientes/${patientId}/processar-pdf/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            pdfLoading.style.display = 'none';
+            
+            if (data.sucesso) {
+                showSuccess(data.mensagem, data.entidades);
+            } else {
+                showError(data.erro);
+            }
+        })
+        .catch(error => {
+            pdfLoading.style.display = 'none';
+            showError('Erro ao processar o arquivo: ' + error.message);
+        });
+    }
+
+    function showSuccess(message, entidades) {
+        pdfSuccess.textContent = '✓ ' + message;
+        pdfResults.style.display = 'block';
+        pdfError.style.display = 'none';
+
+        // Renderizar entidades
+        const entityMap = [
+            { key: 'hpv_types', label: '🔴 HPV' },
+            { key: 'lesions', label: '🟠 Lesões' },
+            { key: 'exams', label: '🟢 Exames' },
+            { key: 'procedures', label: '🔵 Procedimentos' },
+            { key: 'viral_loads', label: '🟣 Carga Viral' },
+            { key: 'social_factors', label: '📚 Fatores Sociais' },
+            { key: 'geographic_factors', label: '📍 Geográficos' },
+            { key: 'behavioral_factors', label: '👥 Comportamentais' },
+            { key: 'follow_up_issues', label: '⏰ Seguimento' }
+        ];
+
+        pdfEntitiesGrid.innerHTML = '';
+        entityMap.forEach(entity => {
+            const items = entidades[entity.key];
+            if (items && items.length > 0) {
+                const box = document.createElement('div');
+                box.className = 'pdf-entity-box';
+                box.innerHTML = `
+                    <div class="pdf-entity-title">${entity.label}</div>
+                    <div class="pdf-entity-items">
+                        ${items.map(item => `<div>• ${item}</div>`).join('')}
+                    </div>
+                `;
+                pdfEntitiesGrid.appendChild(box);
+            }
+        });
+    }
+
+    function showError(message) {
+        pdfError.style.display = 'block';
+        pdfError.textContent = '❌ ' + message;
+        pdfResults.style.display = 'none';
+        pdfLoading.style.display = 'none';
+    }
+
+    function getCSRFToken() {
+        const name = 'csrftoken';
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
 {% endblock %}
+
