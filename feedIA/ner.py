@@ -394,6 +394,29 @@ def extract_entities(text):
             if not any(c.isalpha() for c in entity_text):
                 continue
             
+            # VALIDAÇÃO CRÍTICA: rejeitar entidades muito longas (provavelmente são múltiplas frases)
+            # Entidades válidas raramente têm mais de 80 caracteres
+            if len(entity_text) > 80:
+                continue
+            
+            # Rejeitar se contém ponto (indica múltiplas frases/sentenças)
+            if '.' in entity_text:
+                continue
+            
+            # Rejeitar se contém quebra de linha
+            if '\n' in entity_text or '\r' in entity_text:
+                continue
+            
+            # Rejeitar se contém muitas vírgulas (indica múltiplos itens/informações)
+            if entity_text.count(',') > 1:
+                continue
+            
+            # Rejeitar se contém palavras pessoais demais
+            palavras_pessoais = ['Salvador', 'Tororo', 'Avenida', 'Rua', 'CEP', 'Cidade', 'Bairro', 
+                                'Telefone', 'Email', 'Endereço']
+            if any(palavra in entity_text for palavra in palavras_pessoais):
+                continue
+            
             # Filtrar palavras comuns
             if entity_text.lower() in common_words:
                 continue
@@ -445,7 +468,7 @@ def extract_entities(text):
                     continue
             
             elif ent.label_ == "SOCIAL_FACTOR":
-                # Fatores sociais: validação básica para não deixar passar entidades vazias
+                # Fatores sociais: validação rigorosa
                 # Palavras-chave que caracterizam fatores sociais
                 palavras_validas = ['ESCOLAR', 'SOCIAL', 'RENDA', 'VULNERABIL', 'EDUCACAO', 
                                    'ANALFABET', 'POBREZA', 'INDIGENA', 'NEGRA', 'PARDA', 
@@ -453,14 +476,36 @@ def extract_entities(text):
                                    'DESFAVORAVEL', 'DIFICULDADE', 'ACESSO', 'SERVIÇO']
                 if not any(palavra in entity_text.upper() for palavra in palavras_validas):
                     continue
+                # Rejeitar se tem mais de 2 palavras (indica múltiplas informações)
+                if len(entity_text.split()) > 4:
+                    continue
             
             elif ent.label_ == "GEOGRAPHIC":
-                # Fatores geográficos (não precisa validação rígida)
-                pass
+                # Fatores geográficos: validação de regiões e locais
+                regioes_validas = ['NORTE', 'NORDESTE', 'SUDESTE', 'SUL', 'CENTRO', 'BRASIL',
+                                  'RURAL', 'URBANA', 'ACESSO', 'REMOTA', 'DIFICIL', 'PERIFERIA',
+                                  'FAVELA', 'MORRO', 'COMUNIDADE']
+                if not any(regiao in entity_text.upper() for regiao in regioes_validas):
+                    # Se não tem termos de região, rejeitar
+                    continue
+                # Rejeitar se tem mais de 3 palavras
+                if len(entity_text.split()) > 5:
+                    continue
             
             elif ent.label_ == "BEHAVIORAL":
-                # Fatores comportamentais (não precisa validação rígida)
-                pass
+                # Fatores comportamentais: validação rigorosa
+                # Deve conter palavras-chave específicas
+                palavras_comportamentais = ['PARCEIRO', 'IDADE', 'SEXUAL', 'ATIVIDADE', 'INICIO', 
+                                          'NUMERO', 'MÚLTIPLO', 'PRECOCE', 'VIDA', 'VIVIDO']
+                if not any(palavra in entity_text.upper() for palavra in palavras_comportamentais):
+                    continue
+                # Rejeitar se tem mais de 3 palavras (indica informação demais)
+                if len(entity_text.split()) > 5:
+                    continue
+                # Rejeitar se começa com características pessoais (Idade, Sexualidade, etc de forma isolada)
+                rejeitar_prefixos = ['IDADE:', 'SEXUALIDADE:', 'ESCOLARIDADE:', 'SEXO:']
+                if any(prefix in entity_text.upper() for prefix in rejeitar_prefixos):
+                    continue
             
             elif ent.label_ == "FOLLOW_UP":
                 # Acompanhamento (não precisa validação rígida)
