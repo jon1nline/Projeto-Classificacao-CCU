@@ -1,0 +1,201 @@
+{% extends "pacientes/base.html" %}
+
+{% block title %}Dados Coletados{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chart-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+
+    .chart-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+        .grid-2 {
+            grid-template-columns: 1fr;
+        }
+        .chart-card {
+            padding: 15px;
+        }
+        .info-box {
+            padding: 15px;
+        }
+        canvas {
+            max-height: 300px;
+        }
+    }
+
+    .info-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+    }
+
+    .info-box strong {
+        font-size: 28px;
+        display: block;
+    }
+
+    .empty-state {
+        background: white;
+        border-radius: 12px;
+        padding: 40px;
+        text-align: center;
+        color: #666;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2 class="page-title">📊 Dados Coletados (Pacientes)</h2>
+
+{% if total_classificados > 0 %}
+    <div class="info-box">
+        <strong>{{ total_classificados }}</strong>
+        Paciente(s) com classificação de risco atribuída
+    </div>
+
+    <div class="grid-2">
+        <div class="chart-card">
+            <div class="chart-title">📈 Idade por Classificação (Mín/Máx/Média)</div>
+            <canvas id="chart-idade"></canvas>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">🏫 Classificação por Escolaridade</div>
+            <canvas id="chart-escolaridade"></canvas>
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <div class="chart-card">
+            <div class="chart-title">💬 Classificação por Sexualidade</div>
+            <canvas id="chart-sexualidade"></canvas>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">📍 Classificação por Bairro (Top 10)</div>
+            <canvas id="chart-bairro"></canvas>
+        </div>
+    </div>
+
+    <div class="chart-card">
+        <div class="chart-title">🏙️ Classificação por Cidade (Top 10)</div>
+        <canvas id="chart-cidade"></canvas>
+    </div>
+{% else %}
+    <div class="empty-state">
+        <h3>Sem dados suficientes</h3>
+        <p>Cadastre pacientes e atribua classificação de risco para visualizar os gráficos.</p>
+    </div>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const idadeLabels = {{ idade_labels|safe }};
+    const idadeMin = {{ idade_min|safe }};
+    const idadeMax = {{ idade_max|safe }};
+    const idadeAvg = {{ idade_avg|safe }};
+
+    const bairroLabels = {{ bairro_labels|safe }};
+    const bairroBaixo = {{ bairro_baixo|safe }};
+    const bairroMedio = {{ bairro_medio|safe }};
+    const bairroAlto = {{ bairro_alto|safe }};
+
+    const cidadeLabels = {{ cidade_labels|safe }};
+    const cidadeBaixo = {{ cidade_baixo|safe }};
+    const cidadeMedio = {{ cidade_medio|safe }};
+    const cidadeAlto = {{ cidade_alto|safe }};
+
+    const escolaridadeLabels = {{ escolaridade_labels|safe }};
+    const escolaridadeBaixo = {{ escolaridade_baixo|safe }};
+    const escolaridadeMedio = {{ escolaridade_medio|safe }};
+    const escolaridadeAlto = {{ escolaridade_alto|safe }};
+
+    const sexualidadeLabels = {{ sexualidade_labels|safe }};
+    const sexualidadeBaixo = {{ sexualidade_baixo|safe }};
+    const sexualidadeMedio = {{ sexualidade_medio|safe }};
+    const sexualidadeAlto = {{ sexualidade_alto|safe }};
+
+    if (idadeLabels.length) {
+        new Chart(document.getElementById('chart-idade'), {
+            type: 'bar',
+            data: {
+                labels: idadeLabels,
+                datasets: [
+                    {
+                        label: 'Idade mínima',
+                        data: idadeMin,
+                        backgroundColor: 'rgba(16, 185, 129, 0.7)'
+                    },
+                    {
+                        label: 'Idade média',
+                        data: idadeAvg,
+                        backgroundColor: 'rgba(59, 130, 246, 0.7)'
+                    },
+                    {
+                        label: 'Idade máxima',
+                        data: idadeMax,
+                        backgroundColor: 'rgba(239, 68, 68, 0.7)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Idade (anos)' }
+                    }
+                }
+            }
+        });
+    }
+
+    function stackedBarChart(canvasId, labels, baixo, medio, alto) {
+        if (!labels.length) return;
+        new Chart(document.getElementById(canvasId), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Baixo Risco', data: baixo, backgroundColor: 'rgba(16, 185, 129, 0.7)' },
+                    { label: 'Médio Risco', data: medio, backgroundColor: 'rgba(245, 158, 11, 0.7)' },
+                    { label: 'Alto Risco', data: alto, backgroundColor: 'rgba(239, 68, 68, 0.7)' }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { stacked: true },
+                    y: { stacked: true, beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    stackedBarChart('chart-bairro', bairroLabels, bairroBaixo, bairroMedio, bairroAlto);
+    stackedBarChart('chart-cidade', cidadeLabels, cidadeBaixo, cidadeMedio, cidadeAlto);
+    stackedBarChart('chart-escolaridade', escolaridadeLabels, escolaridadeBaixo, escolaridadeMedio, escolaridadeAlto);
+    stackedBarChart('chart-sexualidade', sexualidadeLabels, sexualidadeBaixo, sexualidadeMedio, sexualidadeAlto);
+</script>
+{% endblock %}

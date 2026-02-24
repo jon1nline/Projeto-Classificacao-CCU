@@ -1,0 +1,809 @@
+{% extends "pacientes/base.html" %}
+
+{% block title %}{{ paciente.nome }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .patient-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .patient-name-header {
+        font-size: 32px;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .patient-sus-header {
+        font-family: monospace;
+        font-size: 16px;
+        opacity: 0.9;
+    }
+
+    .tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .tab {
+        padding: 10px 20px;
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        color: #333;
+        transition: all 0.3s;
+        font-size: 14px;
+    }
+
+    .tab:hover {
+        border-color: #667eea;
+        color: #667eea;
+    }
+
+    @media (max-width: 768px) {
+        .patient-header {
+            padding: 20px 15px;
+        }
+        .patient-name-header {
+            font-size: 24px;
+        }
+        .tabs {
+            gap: 8px;
+        }
+        .tab {
+            padding: 8px 15px;
+            font-size: 13px;
+        }
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+        .section {
+            padding: 20px 15px;
+        }
+        .action-buttons {
+            flex-direction: column;
+        }
+        .action-btn {
+            width: 100%;
+            text-align: center;
+        }
+    }
+
+    .tab.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-color: #667eea;
+    }
+
+    .section {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .section-title {
+        font-size: 20px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 3px solid #667eea;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .info-item {
+        background: #f9fafb;
+        padding: 15px;
+        border-radius: 6px;
+        border-left: 4px solid #667eea;
+    }
+
+    .info-label {
+        color: #666;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+    }
+
+    .info-value {
+        color: #333;
+        font-size: 16px;
+        font-weight: 500;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+    }
+
+    .action-btn {
+        padding: 10px 15px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 13px;
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: none;
+        cursor: pointer;
+    }
+
+    .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+    }
+
+    .empty-message {
+        text-align: center;
+        color: #999;
+        padding: 30px;
+        font-style: italic;
+    }
+
+    .record-item {
+        background: #f9fafb;
+        padding: 15px;
+        border-radius: 6px;
+        border-left: 4px solid #667eea;
+        margin-bottom: 15px;
+    }
+
+    .record-title {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+    }
+
+    .record-date {
+        color: #666;
+        font-size: 12px;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-top: 8px;
+    }
+
+    .badge-success {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .badge-warning {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .badge-danger {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .ner-section {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 20px;
+        border: 2px solid #7c3aed;
+    }
+
+    .ner-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .entity-group {
+        margin-bottom: 15px;
+    }
+
+    .entity-group-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #667eea;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .entity-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .entity-tag {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 16px;
+        font-size: 12px;
+        font-weight: 600;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .entity-tag.hpv {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    }
+
+    .entity-tag.lesion {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+
+    .entity-tag.exam {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+
+    .entity-tag.procedure {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    }
+
+    .entity-tag.viral {
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    }
+
+    .patient-text-preview {
+        background: #f9fafb;
+        padding: 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        color: #666;
+        margin-top: 10px;
+        max-height: 100px;
+        overflow-y: auto;
+        border-left: 4px solid #7c3aed;
+    }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="patient-header">
+    <div class="patient-name-header">{{ paciente.nome }}</div>
+    <div class="patient-sus-header">SUS: {{ paciente.cartao_sus }}</div>
+</div>
+
+<div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+    <a href="{% url 'editar_paciente' paciente.pk %}" class="btn">✏️ Editar Dados</a>
+    <a href="{% url 'lista_pacientes' %}" class="btn btn-secondary">← Voltar à Lista</a>
+</div>
+
+<!-- ENTIDADES MÉDICAS EXTRAÍDAS (NER) -->
+{% if entities.hpv_types or entities.lesions or entities.exams or entities.procedures or entities.viral_loads or entities.social_factors or entities.geographic or entities.behavioral or entities.follow_up %}
+<div class="ner-section">
+    <div class="ner-title">🔬 Entidades Médicas Identificadas (NER)</div>
+    <p style="font-size: 13px; color: #666; margin-bottom: 15px;">
+        Informações clínicas e sociais extraídas automaticamente do histórico do paciente
+    </p>
+    
+    <!-- SEÇÃO CLÍNICA -->
+    {% if entities.hpv_types or entities.lesions or entities.exams or entities.procedures or entities.viral_loads %}
+    <div style="margin-bottom: 20px;">
+        <div style="font-weight: 600; color: #667eea; margin-bottom: 12px; font-size: 13px; padding: 8px 0; border-bottom: 2px solid #dbeafe;">
+            🧠 Entidades Clínicas
+        </div>
+        
+        {% if entities.hpv_types %}
+        <div class="entity-group">
+            <div class="entity-group-title">🦠 Tipos de HPV</div>
+            <div class="entity-tags">
+                {% for hpv in entities.hpv_types %}
+                <span class="entity-tag hpv">{{ hpv }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if entities.lesions %}
+        <div class="entity-group">
+            <div class="entity-group-title">⚠️ Lesões</div>
+            <div class="entity-tags">
+                {% for lesion in entities.lesions %}
+                <span class="entity-tag lesion">{{ lesion }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if entities.exams %}
+        <div class="entity-group">
+            <div class="entity-group-title">🔬 Exames</div>
+            <div class="entity-tags">
+                {% for exam in entities.exams %}
+                <span class="entity-tag exam">{{ exam }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if entities.procedures %}
+        <div class="entity-group">
+            <div class="entity-group-title">⚕️ Procedimentos</div>
+            <div class="entity-tags">
+                {% for proc in entities.procedures %}
+                <span class="entity-tag procedure">{{ proc }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if entities.viral_loads %}
+        <div class="entity-group">
+            <div class="entity-group-title">📊 Carga Viral</div>
+            <div class="entity-tags">
+                {% for viral in entities.viral_loads %}
+                <span class="entity-tag viral">{{ viral }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- SEÇÃO DE VULNERABILIDADE SOCIAL -->
+    {% if entities.social_factors or entities.geographic or entities.behavioral or entities.follow_up %}
+    <div style="border-top: 2px solid #fecaca; padding-top: 15px;">
+        <div style="font-weight: 600; color: #ef4444; margin-bottom: 12px; font-size: 13px; padding: 8px 0;">
+            👥 Fatores de Vulnerabilidade Social
+        </div>
+        
+        {% if entities.social_factors %}
+        <div class="entity-group">
+            <div class="entity-group-title">📚 Fatores Socioeconômicos</div>
+            <div class="entity-tags">
+                {% for factor in entities.social_factors %}
+                <span class="entity-tag" style="background-color: #fbbf24; color: white; border: none;">{{ factor }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if entities.geographic %}
+        <div class="entity-group">
+            <div class="entity-group-title">📍 Localização Geográfica</div>
+            <div class="entity-tags">
+                {% for geo in entities.geographic %}
+                <span class="entity-tag" style="background-color: #a78bfa; color: white; border: none;">{{ geo }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if entities.behavioral %}
+        <div class="entity-group">
+            <div class="entity-group-title">👥 Fatores Comportamentais</div>
+            <div class="entity-tags">
+                {% for behavior in entities.behavioral %}
+                <span class="entity-tag" style="background-color: #60a5fa; color: white; border: none;">{{ behavior }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if entities.follow_up %}
+        <div class="entity-group">
+            <div class="entity-group-title">⏰ Problemas de Seguimento</div>
+            <div class="entity-tags">
+                {% for followup in entities.follow_up %}
+                <span class="entity-tag" style="background-color: #ef4444; color: white; border: none;">{{ followup }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <details style="margin-top: 15px;">
+        <summary style="cursor: pointer; color: #667eea; font-size: 13px; font-weight: 600;">
+            📄 Ver texto completo analisado
+        </summary>
+        <div class="patient-text-preview">
+            {{ patient_text }}
+        </div>
+    </details>
+</div>
+{% endif %}
+
+<!-- DADOS PESSOAIS -->
+<div class="section">
+    <div class="section-title">👤 Dados Pessoais</div>
+    <div class="info-grid">
+        <div class="info-item">
+            <div class="info-label">Data de Nascimento</div>
+            <div class="info-value">{{ paciente.data_nascimento|date:"d/m/Y" }}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Grupo étnico</div>
+            <div class="info-value">{{ paciente.get_cor_display }}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Sexualidade</div>
+            <div class="info-value">{{ paciente.get_sexualidade_display }}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Escolaridade</div>
+            <div class="info-value">{{ paciente.get_escolaridade_display }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- ENDEREÇO -->
+<div class="section">
+    <div class="section-title">🏠 Endereço</div>
+    <div class="info-grid">
+        <div class="info-item">
+            <div class="info-label">Rua</div>
+            <div class="info-value">{{ paciente.rua }}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Bairro</div>
+            <div class="info-value">{{ paciente.bairro }}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Cidade</div>
+            <div class="info-value">{{ paciente.cidade }}, {{ paciente.estado }}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">CEP</div>
+            <div class="info-value">{{ paciente.cep }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- VULNERABILIDADE SOCIAL -->
+<div class="section">
+    <div class="section-title">👥 Fatores de Vulnerabilidade Social</div>
+    <div class="info-grid">
+        <div class="info-item">
+            <div class="info-label">Área Rural/Difícil Acesso?</div>
+            <div class="info-value">
+                {% if paciente.area_rural %}
+                    <span style="color: #ef4444; font-weight: 600;">✓ Sim</span>
+                {% else %}
+                    <span style="color: #10b981; font-weight: 600;">✗ Não</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Histórico de Perda de Seguimento?</div>
+            <div class="info-value">
+                {% if paciente.perda_seguimento %}
+                    <span style="color: #ef4444; font-weight: 600;">✓ Sim</span>
+                {% else %}
+                    <span style="color: #10b981; font-weight: 600;">✗ Não</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Primeira Vez no Rastreamento?</div>
+            <div class="info-value">
+                {% if paciente.primeira_vez_rastreamento %}
+                    <span style="color: #f59e0b; font-weight: 600;">✓ Sim</span>
+                {% else %}
+                    <span style="color: #10b981; font-weight: 600;">✗ Não</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% if paciente.observacoes_vulnerabilidade %}
+    <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; border-radius: 4px; margin-top: 15px;">
+        <div style="font-weight: 600; color: #92400e; font-size: 13px; margin-bottom: 8px;">Observações:</div>
+        <div style="color: #78350f; font-size: 13px;">{{ paciente.observacoes_vulnerabilidade }}</div>
+    </div>
+    {% endif %}
+    <div class="action-buttons" style="margin-top: 15px;">
+        <a href="{% url 'editar_paciente' paciente.pk %}" class="action-btn">✏️ Editar Vulnerabilidade</a>
+    </div>
+</div>
+
+<!-- HISTÓRICO SEXUAL -->
+<div class="section">
+    <div class="section-title">💑 Histórico Sexual</div>
+    {% if historico_sexual %}
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Idade do Início da Atividade Sexual</div>
+                <div class="info-value">{{ historico_sexual.idade_inicio_atividade_sexual|default:"Não informado" }} anos</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Número de Parceiros</div>
+                <div class="info-value">{{ historico_sexual.numero_parceiros|default:"Não informado" }}</div>
+            </div>
+        </div>
+        <div class="action-buttons">
+            <a href="{% url 'adicionar_historico_sexual' paciente.pk %}" class="action-btn">✏️ Editar</a>
+        </div>
+    {% else %}
+        <div class="empty-message">Sem informações registradas</div>
+        <div class="action-buttons">
+            <a href="{% url 'adicionar_historico_sexual' paciente.pk %}" class="action-btn">+ Adicionar Histórico Sexual</a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- HISTÓRICO REPRODUTIVO -->
+<div class="section">
+    <div class="section-title">🤰 Histórico Reprodutivo</div>
+    {% if historico_reprodutivo %}
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Número de Gestações</div>
+                <div class="info-value">{{ historico_reprodutivo.numero_gestacoes|default:"Não informado" }}</div>
+            </div>
+        </div>
+        {% if historico_reprodutivo.historico_ists %}
+            <div style="background: #f9fafb; padding: 15px; border-radius: 6px; border-left: 4px solid #667eea; margin-bottom: 20px;">
+                <div class="info-label">Histórico de ISTs</div>
+                <div style="color: #333; margin-top: 8px; white-space: pre-wrap;">{{ historico_reprodutivo.historico_ists }}</div>
+            </div>
+        {% endif %}
+        <div class="action-buttons">
+            <a href="{% url 'adicionar_historico_reprodutivo' paciente.pk %}" class="action-btn">✏️ Editar</a>
+        </div>
+    {% else %}
+        <div class="empty-message">Sem informações registradas</div>
+        <div class="action-buttons">
+            <a href="{% url 'adicionar_historico_reprodutivo' paciente.pk %}" class="action-btn">+ Adicionar Histórico Reprodutivo</a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- VACINAÇÃO -->
+<div class="section">
+    <div class="section-title">💉 Vacinação contra HPV</div>
+    {% if vacinacao %}
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Status de Vacinação</div>
+                <div class="info-value">
+                    {{ vacinacao.get_status_vacinacao_display }}
+                    {% if vacinacao.status_vacinacao == 'totalmente_vacinado' %}
+                        <span class="badge badge-success">✓ Completo</span>
+                    {% elif vacinacao.status_vacinacao == 'parcialmente_vacinado' %}
+                        <span class="badge badge-warning">⚠ Incompleto</span>
+                    {% else %}
+                        <span class="badge badge-danger">✗ Não Vacinado</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% if vacinacao.data_primeira_dose %}
+                <div class="info-item">
+                    <div class="info-label">1ª Dose</div>
+                    <div class="info-value">{{ vacinacao.data_primeira_dose|date:"d/m/Y" }}</div>
+                </div>
+            {% endif %}
+            {% if vacinacao.data_segunda_dose %}
+                <div class="info-item">
+                    <div class="info-label">2ª Dose</div>
+                    <div class="info-value">{{ vacinacao.data_segunda_dose|date:"d/m/Y" }}</div>
+                </div>
+            {% endif %}
+            {% if vacinacao.data_terceira_dose %}
+                <div class="info-item">
+                    <div class="info-label">3ª Dose</div>
+                    <div class="info-value">{{ vacinacao.data_terceira_dose|date:"d/m/Y" }}</div>
+                </div>
+            {% endif %}
+        </div>
+        {% if vacinacao.observacoes %}
+            <div style="background: #f9fafb; padding: 15px; border-radius: 6px; border-left: 4px solid #667eea; margin-bottom: 20px;">
+                <div class="info-label">Observações</div>
+                <div style="color: #333; margin-top: 8px; white-space: pre-wrap;">{{ vacinacao.observacoes }}</div>
+            </div>
+        {% endif %}
+        <div class="action-buttons">
+            <a href="{% url 'adicionar_vacinacao' paciente.pk %}" class="action-btn">✏️ Editar Vacinação</a>
+        </div>
+    {% else %}
+        <div class="empty-message">Sem informações registradas</div>
+        <div class="action-buttons">
+            <a href="{% url 'adicionar_vacinacao' paciente.pk %}" class="action-btn">+ Adicionar Vacinação</a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- EXAMES DNA-HPV -->
+<div class="section">
+    <div class="section-title">🧬 Exames DNA-HPV</div>
+    {% if exames_dna %}
+        {% for exame in exames_dna %}
+            <div class="record-item">
+                <div class="record-title">{{ exame.get_tipo_hpv_display }} - {{ exame.data_exame|date:"d/m/Y" }}</div>
+                <div class="record-date">Resultado: {{ exame.resultado }}</div>
+                {% if exame.carga_viral %}
+                    <div style="color: #666; font-size: 13px; margin-top: 5px;">Carga Viral: {{ exame.carga_viral }}</div>
+                {% endif %}
+                {% if exame.observacoes %}
+                    <div style="color: #666; font-size: 13px; margin-top: 8px;">{{ exame.observacoes }}</div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-message">Sem exames registrados</div>
+    {% endif %}
+    <div class="action-buttons">
+        <a href="{% url 'adicionar_exame_dna_hpv' paciente.pk %}" class="action-btn">+ Novo Exame DNA-HPV</a>
+    </div>
+</div>
+
+<!-- CITOPATOLÓGICOS -->
+<div class="section">
+    <div class="section-title">🔬 Histórico de Citopatológicos (Papanicolau)</div>
+    {% if citopatologicos %}
+        {% for cito in citopatologicos %}
+            <div class="record-item">
+                <div class="record-title">{{ cito.get_resultado_display }} - {{ cito.data_exame|date:"d/m/Y" }}</div>
+                {% if cito.observacoes %}
+                    <div style="color: #666; font-size: 13px; margin-top: 8px;">{{ cito.observacoes }}</div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-message">Sem exames registrados</div>
+    {% endif %}
+    <div class="action-buttons">
+        <a href="{% url 'adicionar_citopatologico' paciente.pk %}" class="action-btn">+ Novo Citopatológico</a>
+    </div>
+</div>
+
+<!-- PROCEDIMENTOS -->
+<div class="section">
+    <div class="section-title">🏥 Procedimentos Realizados</div>
+    {% if procedimentos %}
+        {% for proc in procedimentos %}
+            <div class="record-item">
+                <div class="record-title">{{ proc.get_tipo_procedimento_display }} - {{ proc.data_procedimento|date:"d/m/Y" }}</div>
+                <div style="color: #666; font-size: 13px; margin-top: 8px;">{{ proc.resultado }}</div>
+                {% if proc.complicacoes %}
+                    <div style="color: #ef4444; font-size: 13px; margin-top: 8px;">⚠ Complicações: {{ proc.complicacoes }}</div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-message">Sem procedimentos registrados</div>
+    {% endif %}
+    <div class="action-buttons">
+        <a href="{% url 'adicionar_procedimento' paciente.pk %}" class="action-btn">+ Novo Procedimento</a>
+    </div>
+</div>
+
+<!-- CLASSIFICAÇÃO DE RISCO -->
+<div class="section">
+    <div class="section-title">📊 Classificação de Risco (NER)</div>
+    {% if status_seguimento and status_seguimento.classificacao_risco %}
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Risco Classificado</div>
+                <div class="info-value">
+                    {% if status_seguimento.classificacao_risco == 'baixo' %}
+                        <span class="badge badge-success">🟢 Baixo Risco</span>
+                    {% elif status_seguimento.classificacao_risco == 'medio' %}
+                        <span class="badge badge-warning">🟡 Médio Risco</span>
+                    {% elif status_seguimento.classificacao_risco == 'alto' %}
+                        <span class="badge badge-danger">🔴 Alto Risco</span>
+                    {% elif status_seguimento.classificacao_risco == 'low' %}
+                        <span class="badge badge-success">🟢 Baixo Risco</span>
+                    {% elif status_seguimento.classificacao_risco == 'medium' %}
+                        <span class="badge badge-warning">🟡 Médio Risco</span>
+                    {% elif status_seguimento.classificacao_risco == 'high' %}
+                        <span class="badge badge-danger">🔴 Alto Risco</span>
+                    {% else %}
+                        <span style="color: #999;">Não classificado</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% if status_seguimento.score_total != None %}
+            <div class="info-item">
+                <div class="info-label">Score Total</div>
+                <div class="info-value">
+                    <span style="font-size: 18px; font-weight: bold; color: #667eea;">{{ status_seguimento.score_total }}</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Justificativas da Classificação -->
+        {% if status_seguimento.justificativas %}
+        <div style="background: #f9fafb; border-left: 4px solid #667eea; padding: 12px; border-radius: 4px; margin: 15px 0;">
+            <div style="font-weight: 600; color: #333; font-size: 13px; margin-bottom: 8px;">Fatores de Risco Identificados:</div>
+            <div style="color: #666; font-size: 13px; white-space: pre-wrap; line-height: 1.6;">{{ status_seguimento.justificativas }}</div>
+        </div>
+        {% endif %}
+        
+        <!-- Detalhes das Entidades Extraídas -->
+        {% if status_seguimento.hpv_types or status_seguimento.lesions or status_seguimento.exams or status_seguimento.procedures or status_seguimento.viral_loads %}
+        <details style="margin-top: 15px; background: #f9fafb; padding: 12px; border-radius: 6px;">
+            <summary style="cursor: pointer; color: #667eea; font-size: 13px; font-weight: 600;">📋 Entidades Clínicas Extraídas</summary>
+            <div style="margin-top: 12px; color: #666; font-size: 13px; line-height: 1.8;">
+                {% if status_seguimento.hpv_types %}
+                <div><strong>• HPV:</strong> {{ status_seguimento.hpv_types }}</div>
+                {% endif %}
+                {% if status_seguimento.lesions %}
+                <div><strong>• Lesões:</strong> {{ status_seguimento.lesions }}</div>
+                {% endif %}
+                {% if status_seguimento.exams %}
+                <div><strong>• Exames:</strong> {{ status_seguimento.exams }}</div>
+                {% endif %}
+                {% if status_seguimento.procedures %}
+                <div><strong>• Procedimentos:</strong> {{ status_seguimento.procedures }}</div>
+                {% endif %}
+                {% if status_seguimento.viral_loads %}
+                <div><strong>• Carga Viral:</strong> {{ status_seguimento.viral_loads }}</div>
+                {% endif %}
+            </div>
+        </details>
+        {% endif %}
+        
+        <!-- Detalhes de Vulnerabilidade Social -->
+        {% if status_seguimento.social_factors or status_seguimento.geographic_factors or status_seguimento.behavioral_factors or status_seguimento.follow_up_issues %}
+        <details style="margin-top: 10px; background: #f9fafb; padding: 12px; border-radius: 6px;">
+            <summary style="cursor: pointer; color: #667eea; font-size: 13px; font-weight: 600;">👥 Fatores de Vulnerabilidade Social Extraídos</summary>
+            <div style="margin-top: 12px; color: #666; font-size: 13px; line-height: 1.8;">
+                {% if status_seguimento.social_factors %}
+                <div><strong>📚 Socioeconômicos:</strong> {{ status_seguimento.social_factors }}</div>
+                {% endif %}
+                {% if status_seguimento.geographic_factors %}
+                <div><strong>📍 Geográficos:</strong> {{ status_seguimento.geographic_factors }}</div>
+                {% endif %}
+                {% if status_seguimento.behavioral_factors %}
+                <div><strong>👥 Comportamentais:</strong> {{ status_seguimento.behavioral_factors }}</div>
+                {% endif %}
+                {% if status_seguimento.follow_up_issues %}
+                <div><strong>⏰ Seguimento:</strong> {{ status_seguimento.follow_up_issues }}</div>
+                {% endif %}
+            </div>
+        </details>
+        {% endif %}
+        
+        <div class="action-buttons" style="margin-top: 15px;">
+            <a href="{% url 'editar_paciente' paciente.pk %}" class="action-btn">✏️ Atualizar Dados (Reclassificar)</a>
+        </div>
+    {% else %}
+        <div class="empty-message">⚠️ Paciente ainda não foi classificado pelo sistema NER</div>
+        <p style="color: #666; font-size: 13px; margin-top: 10px;">
+            A classificação acontece automaticamente ao editar os dados do paciente. 
+            Clique no botão abaixo para ativar a classificação.
+        </p>
+        <div class="action-buttons">
+            <a href="{% url 'editar_paciente' paciente.pk %}" class="action-btn">✏️ Editar Dados e Classificar</a>
+        </div>
+    {% endif %}
+</div>
+
+<div style="text-align: center; color: #999; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e0e0e0;">
+    <small>Paciente cadastrado em: {{ paciente.criado_em|date:"d/m/Y H:i" }} | Última atualização: {{ paciente.atualizado_em|date:"d/m/Y H:i" }}</small>
+</div>
+{% endblock %}

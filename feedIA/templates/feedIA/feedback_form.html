@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar Classificador NER - Sistema CCU</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .navbar {
+            background: white;
+            color: #333;
+            padding: 20px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .navbar h1 {
+            font-size: 22px;
+            margin: 0;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .navbar-links {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .navbar-links a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+        .navbar-links a:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .page-header h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card .description {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+            line-height: 1.6;
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        input[type="text"]:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button, .btn {
+            width: 100%;
+            padding: 14px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            display: inline-block;
+            text-decoration: none;
+        }
+
+        button:hover, .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active, .btn:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        }
+
+        .messages {
+            margin-bottom: 25px;
+        }
+
+        .message {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            font-weight: 500;
+        }
+
+        .message.success {
+            background-color: #d1fae5;
+            color: #065f46;
+            border-left: 5px solid #10b981;
+        }
+
+        .message.error {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border-left: 5px solid #ef4444;
+        }
+
+        .message.warning {
+            background-color: #fef3c7;
+            color: #92400e;
+            border-left: 5px solid #f59e0b;
+        }
+
+        .info-box {
+            background: #f0f4ff;
+            border: 2px solid #b8c5ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .info-box h3 {
+            color: #4c51bf;
+            margin-bottom: 10px;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-box ul {
+            margin-left: 20px;
+            color: #555;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .info-box ul li {
+            margin-bottom: 5px;
+        }
+
+        .example-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .example-tag {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .tag-hpv { background: #fee2e2; color: #991b1b; }
+        .tag-lesion { background: #fed7aa; color: #9a3412; }
+        .tag-exam { background: #bfe6db; color: #065f46; }
+        .tag-procedure { background: #dbeafe; color: #1e40af; }
+        .tag-viral { background: #ede9fe; color: #5b21b6; }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding: 0 20px;
+        }
+
+        .step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            color: #999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin: 0 auto 8px;
+        }
+
+        .step.active .step-number {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .step-label {
+            font-size: 13px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .grid-2, .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .step-indicator {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>🧠 Sistema de Classificação de Risco - CCU</h1>
+        <div class="navbar-links">
+            <a href="/dashboard/">📊 Dashboard</a>
+            <a href="/pacientes/">👥 Pacientes</a>
+            <a href="/admin/">⚙️ Admin</a>
+        </div>
+    </div>
+
+    <div class="container">
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="message {{ message.tags }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Header da Página -->
+        <div class="page-header">
+            <h1>🔬 Gerenciar Classificador NER</h1>
+            <p class="subtitle">
+                O sistema NER (Named Entity Recognition) identifica automaticamente informações <strong>médicas</strong> 
+                (tipos de HPV, lesões, exames, procedimentos) e <strong>socioeconômicas</strong> (escolaridade, região, 
+                fatores comportamentais, perda de seguimento) nos prontuários dos pacientes. A classificação de risco 
+                considera <strong>desigualdades sociais e territoriais</strong>, alinhada ao projeto de pesquisa sobre 
+                equidade no rastreamento do câncer de colo de útero no SUS.
+            </p>
+        </div>
+
+        <!-- Estatísticas do Sistema -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📚</div>
+                <div class="stat-number">{{ n_training_examples }}</div>
+                <div class="stat-label">Exemplos de Treinamento</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-number">{{ feedbacks.count }}</div>
+                <div class="stat-label">Classificações Realizadas</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-number">9</div>
+                <div class="stat-label">Tipos de Entidades</div>
+            </div>
+        </div>
+
+        <!-- Passo 1: Treinar Modelo -->
+        <div class="card">
+            <h2>🎓 Passo 1: Treinar o Modelo NER</h2>
+            <p class="description">
+                <strong>O que faz:</strong> Treina o modelo para reconhecer termos médicos e fatores sociais nos textos. 
+                O modelo aprende a identificar <strong>clínica</strong> (HPV 16/18/31, lesões HSIL/NIC, exames DNA-HPV, 
+                procedimentos CAF/conização) e <strong>vulnerabilidade social</strong> (escolaridade, região Norte/Nordeste, 
+                perda de seguimento, fatores comportamentais). 
+                exames (DNA-HPV, colposcopia), procedimentos (CAF, conização) e carga viral.
+                <br><br>
+                <strong>Quando treinar:</strong> Sempre que adicionar novos exemplos ou ao iniciar o sistema pela primeira vez.
+                <br><br>
+                <strong>Status atual:</strong> {{ n_training_examples }} exemplos disponíveis 
+                {% if n_training_examples < 30 %}
+                    (⚠️ Recomendamos adicionar mais exemplos para melhor precisão)
+                {% else %}
+                    (✅ Quantidade adequada)
+                {% endif %}
+            </p>
+            
+            <form method="POST" action="{% url 'treinar_ner' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-success">
+                    🔍 Treinar Modelo NER (Leva cerca de 1-2 minutos)
+                </button>
+            </form>
+        </div>
+
+        <!-- Passo 2: Testar Classificação -->
+        <div class="card">
+            <h2>🧪 Passo 2: Testar o Classificador</h2>
+            <p class="description">
+                <strong>Para que serve:</strong> Teste se o modelo está funcionando corretamente. Cole um texto de exemplo 
+                de prontuário ou faça upload de um arquivo PDF de exame para análise automática.
+            </p>
+            
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="classify_text">
+                
+                <div class="form-group">
+                    <label>📄 Opção 1: Carregar PDF de Exame:</label>
+                    <input type="file" name="pdf_file" accept=".pdf" style="padding: 10px; border: 2px dashed #667eea; border-radius: 8px; background: #f9fafb; width: 100%; cursor: pointer;">
+                    <small style="color: #666; font-size: 13px; display: block; margin-top: 5px;">💡 Arraste um arquivo PDF ou clique para selecionar</small>
+                </div>
+                
+                <div style="text-align: center; margin: 15px 0; color: #999; font-weight: 600;">OU</div>
+                
+                <div class="form-group">
+                    <label>📝 Opção 2: Cole o Texto Manualmente:</label>
+                    <textarea name="texto" placeholder="Exemplo: Paciente com 35 anos, HPV 16 detectado em DNA-HPV realizado em 15/01/2026. Exame citopatológico mostra lesão HSIL. Resultados de colposcopia confirmam lesão de alto grau em zona de transformação."></textarea>
+                </div>
+                
+                <button type="submit" class="btn-info">
+                    🎯 Classificar Agora
+                </button>
+            </form>
+
+            <div class="info-box" style="margin-top: 20px;">
+                <h3>💡 Exemplos de Termos que o NER Identifica:</h3>
+                
+                <p style="font-weight: 600; color: #667eea; margin-bottom: 10px;">🦠 Entidades Clínicas:</p>
+                <div class="example-tags">
+                    <span class="example-tag tag-hpv">HPV 16</span>
+                    <span class="example-tag tag-hpv">HPV 18</span>
+                    <span class="example-tag tag-hpv">HPV 45</span>
+                    <span class="example-tag tag-lesion">HSIL</span>
+                    <span class="example-tag tag-lesion">NIC 2</span>
+                    <span class="example-tag tag-lesion">NIC 3</span>
+                    <span class="example-tag tag-lesion">LSIL</span>
+                    <span class="example-tag tag-exam">DNA-HPV</span>
+                    <span class="example-tag tag-exam">Colposcopia</span>
+                    <span class="example-tag tag-procedure">CAF</span>
+                    <span class="example-tag tag-procedure">Conização</span>
+                    <span class="example-tag tag-viral">Carga viral alta</span>
+                </div>
+                
+                <p style="font-weight: 600; color: #667eea; margin-top: 15px; margin-bottom: 10px;">👥 Fatores de Vulnerabilidade Social (NOVO):</p>
+                <div class="example-tags">
+                    <span class="example-tag" style="background: #f59e0b;">Baixa escolaridade</span>
+                    <span class="example-tag" style="background: #f59e0b;">Vulnerabilidade social</span>
+                    <span class="example-tag" style="background: #8b5cf6;">Região Norte</span>
+                    <span class="example-tag" style="background: #8b5cf6;">Região Nordeste</span>
+                    <span class="example-tag" style="background: #8b5cf6;">Área rural</span>
+                    <span class="example-tag" style="background: #3b82f6;">Múltiplos parceiros</span>
+                    <span class="example-tag" style="background: #3b82f6;">Início precoce atividade sexual</span>
+                    <span class="example-tag" style="background: #ef4444;">Perda de seguimento</span>
+                    <span class="example-tag" style="background: #ef4444;">Ausência de rastreamento</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Passo 3: Adicionar Mais Exemplos -->
+        <div class="card">
+            <h2>➕ Passo 3: Adicionar Novos Exemplos (Opcional)</h2>
+            <p class="description">
+                <strong>Para melhorar o modelo:</strong> Adicione mais exemplos de textos médicos reais. 
+                Quanto mais exemplos variados você adicionar, melhor o modelo aprende a identificar os termos corretamente.
+            </p>
+            
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_example">
+                
+                <div class="form-group">
+                    <label>📝 Texto do Exemplo:</label>
+                    <textarea name="texto" placeholder="Ex: Paciente de 42 anos com HPV 31 detectado. Lesão HSIL identificada em colposcopia. Indicado CAF para tratamento." required></textarea>
+                </div>
+                
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>🦠 Tipos de HPV encontrados:</label>
+                        <input type="text" name="hpv_types" placeholder="Ex: HPV 16, HPV 18">
+                        <small style="color: #666; font-size: 12px;">Separe múltiplos valores por vírgula</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>⚠️ Lesões identificadas:</label>
+                        <input type="text" name="lesions" placeholder="Ex: HSIL, NIC 2">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>🔬 Exames realizados:</label>
+                        <input type="text" name="exams" placeholder="Ex: DNA-HPV, Colposcopia">
+                    </div>
+                    
+                    <div class="form-group">
+                    <div class="form-group">
+                        <label>⚕️ Procedimentos feitos:</label>
+                        <input type="text" name="procedures" placeholder="Ex: CAF, Conização">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>📊 Carga Viral:</label>
+                        <input type="text" name="viral_loads" placeholder="Ex: Carga viral alta">
+                    </div>
+                </div>
+                
+                <p style="font-weight: 600; color: #667eea; margin-top: 20px; margin-bottom: 10px;">👥 Fatores de Vulnerabilidade (Opcional):</p>
+                
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>📚 Fatores Socioeconômicos:</label>
+                        <input type="text" name="social_factors" placeholder="Ex: Baixa escolaridade, vulnerabilidade social">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>📍 Localização Geográfica:</label>
+                        <input type="text" name="geographic" placeholder="Ex: Região Norte, área rural">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>👥 Fatores Comportamentais:</label>
+                        <input type="text" name="behavioral" placeholder="Ex: Múltiplos parceiros, início precoce">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>⏰ Seguimento:</label>
+                        <input type="text" name="follow_up" placeholder="Ex: Perda de seguimento, sem rastreamento">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-warning">
+                    💾 Adicionar Exemplo ao Banco de Treinamento
+                </button>
+            </form>
+        </div>
+
+        <!-- Informações sobre Classificação com Vulnerabilidade Social -->
+        <div class="card">
+            <h2>🎯 Como Funciona a Classificação</h2>
+            <p class="description">
+                O sistema considera <strong>risco clínico</strong> e <strong>vulnerabilidade social</strong> para classificar pacientes de forma mais completa e equitativa.
+            </p>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+                <div style="background: #fee2e2; padding: 20px; border-radius: 8px; border-left: 4px solid #ef4444;">
+                    <h3 style="color: #991b1b; font-size: 16px; margin-bottom: 10px;">🔴 Alto Risco</h3>
+                    <p style="color: #7f1d1d; font-size: 14px; line-height: 1.6;">
+                        • HPV alto risco (16,18,31,33,45,52,58)<br>
+                        • Lesões graves (HSIL, NIC 2/3)<br>
+                        • Procedimentos realizados<br>
+                        • Carga viral alta<br>
+                        <strong>⚠️ OU baixo risco clínico + alta vulnerabilidade social</strong>
+                    </p>
+                </div>
+                
+                <div style="background: #fef3c7; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                    <h3 style="color: #92400e; font-size: 16px; margin-bottom: 10px;">🟡 Médio Risco</h3>
+                    <p style="color: #78350f; font-size: 14px; line-height: 1.6;">
+                        • HPV outros tipos<br>
+                        • Lesões leves (LSIL, NIC 1)<br>
+                        • Exames positivos<br>
+                        • Score total entre 1-2 pontos
+                    </p>
+                </div>
+                
+                <div style="background: #d1fae5; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981;">
+                    <h3 style="color: #065f46; font-size: 16px; margin-bottom: 10px;">🟢 Baixo Risco</h3>
+                    <p style="color: #064e3b; font-size: 14px; line-height: 1.6;">
+                        • Sem entidades de risco identificadas<br>
+                        • Exames negativos<br>
+                        • Score total < 1 ponto
+                    </p>
+                </div>
+            </div>
+            
+            <div style="background: #e0e7ff; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                <h3 style="color: #3730a3; font-size: 16px; margin-bottom: 10px;">📊 Pontuação de Vulnerabilidade Social</h3>
+                <p style="color: #312e81; font-size: 14px; line-height: 1.8;">
+                    📚 <strong>Fatores socioeconômicos (+3 pontos):</strong> escolaridade baixa, vulnerabilidade social<br>
+                    📍 <strong>Fatores geográficos (+1 ponto):</strong> Região Norte/Nordeste, área de difícil acesso<br>
+                    👥 <strong>Fatores comportamentais (+1 ponto):</strong> início precoce atividade sexual, múltiplos parceiros<br>
+                    ⏰ <strong>Perda de seguimento (+1 ponto):</strong> ausência de rastreamento, falha em convocações
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auto-scroll suave ao enviar formulário
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function() {
+                const button = form.querySelector('button[type="submit"]');
+                if (button) {
+                    button.disabled = true;
+                    button.textContent = '⏳ Processando...';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

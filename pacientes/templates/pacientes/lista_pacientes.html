@@ -1,0 +1,148 @@
+{% extends "pacientes/base.html" %}
+
+{% block title %}Lista de Pacientes{% endblock %}
+
+{% block extra_css %}
+<style>
+    .patients-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    @media (max-width: 640px) {
+        .patients-grid {
+            grid-template-columns: 1fr;
+        }
+        .patient-card {
+            padding: 15px;
+        }
+        .patient-actions {
+            flex-direction: column;
+        }
+        .patient-actions .btn {
+            width: 100%;
+        }
+    }
+
+    .patient-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
+        border-left: 5px solid #667eea;
+    }
+
+    .patient-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .patient-name {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .patient-info {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 8px;
+        line-height: 1.6;
+    }
+
+    .patient-sus {
+        font-family: monospace;
+        color: #667eea;
+        font-weight: 600;
+    }
+
+    .patient-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+    }
+
+    .patient-actions a {
+        flex: 1;
+        min-width: 100px;
+        padding: 8px 12px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+        text-align: center;
+        font-size: 12px;
+        font-weight: 600;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .patient-actions a:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .empty-state-icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+    }
+
+    .empty-state-text {
+        color: #666;
+        font-size: 16px;
+        margin-bottom: 30px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+    <h2 class="page-title">👥 Pacientes Cadastrados</h2>
+    <a href="{% url 'novo_paciente' %}" class="btn">+ Novo Paciente</a>
+</div>
+
+{% if pacientes %}
+    <div class="patients-grid">
+        {% for paciente in pacientes %}
+        <div class="patient-card">
+            <div class="patient-name">{{ paciente.nome }}</div>
+            <div class="patient-info">
+                <strong>SUS:</strong> <span class="patient-sus">{{ paciente.cartao_sus }}</span>
+            </div>
+            <div class="patient-info">
+                <strong>Nascimento:</strong> {{ paciente.data_nascimento|date:"d/m/Y" }}
+            </div>
+            <div class="patient-info">
+                <strong>Localidade:</strong> {{ paciente.cidade }}, {{ paciente.estado }}
+            </div>
+            <div class="patient-actions">
+                <a href="{% url 'detalhes_paciente' paciente.pk %}">Ver Detalhes</a>
+                <a href="{% url 'editar_paciente' paciente.pk %}">Editar</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div style="text-align: center; margin-top: 30px; color: #666;">
+        <p>Total: <strong>{{ pacientes.count }}</strong> paciente(s) cadastrado(s)</p>
+    </div>
+{% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">📭</div>
+        <div class="empty-state-text">Nenhum paciente cadastrado ainda</div>
+        <a href="{% url 'novo_paciente' %}" class="btn">+ Começar Cadastrando um Paciente</a>
+    </div>
+{% endif %}
+{% endblock %}

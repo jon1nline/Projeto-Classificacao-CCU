@@ -1,0 +1,118 @@
+{% extends "pacientes/base.html" %}
+
+{% block title %}Editar Paciente{% endblock %}
+
+{% block content %}
+<h2 class="page-title">✏️ Editar Paciente</h2>
+
+<div style="max-width: 800px; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin: 0 auto;">
+    <form method="POST">
+        {% csrf_token %}
+        
+        <h3 style="color: #333; margin-bottom: 20px; border-bottom: 2px solid #667eea; padding-bottom: 10px;">
+            📝 Dados Pessoais
+        </h3>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+            <div class="form-group">
+                <label>{{ form.nome.label }}</label>
+                {{ form.nome }}
+            </div>
+
+            <div class="form-group">
+                <label>{{ form.data_nascimento.label }}</label>
+                {{ form.data_nascimento }}
+            </div>
+
+            <div class="form-group">
+                <label>{{ form.cartao_sus.label }}</label>
+                {{ form.cartao_sus }}
+            </div>
+
+            <div class="form-group">
+                <label>{{ form.cor.label }}</label>
+                {{ form.cor }}
+            </div>
+
+            <div class="form-group">
+                <label>{{ form.sexualidade.label }}</label>
+                {{ form.sexualidade }}
+            </div>
+
+            <div class="form-group">
+                <label>{{ form.escolaridade.label }}</label>
+                {{ form.escolaridade }}
+            </div>
+        </div>
+
+        <h3 style="color: #333; margin-top: 30px; margin-bottom: 20px; border-bottom: 2px solid #667eea; padding-bottom: 10px;">
+            🏠 Endereço
+        </h3>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+            <div class="form-group">
+                <label>{{ form.rua.label }}</label>
+                {{ form.rua }}
+            </div>
+
+            <div class="form-group">
+                <label>{{ form.bairro.label }}</label>
+                {{ form.bairro }}
+            </div>
+
+            <div class="form-group">
+                <label>{{ form.cidade.label }}</label>
+                {{ form.cidade }}
+            </div>
+
+            <div class="form-group">
+                <label>{{ form.estado.label }}</label>
+                {{ form.estado }}
+            </div>
+
+            <div class="form-group">
+                <label>{{ form.cep.label }}</label>
+                {{ form.cep }}
+            </div>
+        </div>
+
+        <h3 style="color: #333; margin-top: 30px; margin-bottom: 20px; border-bottom: 2px solid #667eea; padding-bottom: 10px;">
+            👥 Vulnerabilidade Social (Opcional)
+        </h3>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    {{ form.area_rural }}
+                    <span>{{ form.area_rural.label }}</span>
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    {{ form.perda_seguimento }}
+                    <span>{{ form.perda_seguimento.label }}</span>
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    {{ form.primeira_vez_rastreamento }}
+                    <span>{{ form.primeira_vez_rastreamento.label }}</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 15px;">
+            <label>{{ form.observacoes_vulnerabilidade.label }}</label>
+            {{ form.observacoes_vulnerabilidade }}
+            <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">
+                💡 Descreva barreiras de acesso, situação socioeconômica, dificuldades de transporte, etc.
+            </small>
+        </div>
+            <button type="submit" class="btn">✓ Salvar Alterações</button>
+            <a href="{% url 'detalhes_paciente' paciente.pk %}" class="btn btn-secondary">← Voltar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
