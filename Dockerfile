@@ -34,4 +34,4 @@ RUN python manage.py collectstatic --noinput || true
 EXPOSE 7860
 
 # Comando para iniciar a aplicação
-CMD ["gunicorn", "--bind", "0.0.0.0:7860", "neila.wsgi:application"]
+CMD ["gunicorn", "--bind", "0.0.0.0:7860", "ccu.wsgi:application"]
