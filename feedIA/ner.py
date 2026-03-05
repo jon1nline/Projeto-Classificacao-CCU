@@ -1,6 +1,13 @@
 """
 Módulo de Named Entity Recognition (NER) para extração de entidades médicas.
 Identifica: tipos de HPV, lesões, procedimentos e outros termos clínicos.
+
+Melhorias v2:
+- Tratamento de negação
+- Matriz de risco aprimorada
+- Detector de idade
+- EntityRuler com gazetteers
+- Detecção de persistência
 """
 
 import spacy
@@ -10,6 +17,27 @@ from pathlib import Path
 from django.conf import settings
 import json
 import random
+import re
+from datetime import datetime
+
+# Importar modulo aprimorado
+try:
+    from .ner_enhanced import (
+        detect_negation, extract_age, detect_persistence,
+        add_entity_ruler, classify_risk_with_matrix,
+        MEDICAL_GAZETEER, NEGATION_TERMS, SALVADOR_LOCATIONS
+    )
+    NER_ENHANCED_AVAILABLE = True
+except ImportError:
+    NER_ENHANCED_AVAILABLE = False
+    print("[NER] ⚠️ ner_enhanced.py não disponível. Usando baseado em ner.py")
+
+# Importar data augmentation
+try:
+    from .training_data_augmented import TRAINING_DATA_AUGMENTED
+except ImportError:
+    TRAINING_DATA_AUGMENTED = []
+    print("[NER] ⚠️ training_data_augmented.py não disponível")
 
 # Diretório para salvar o modelo NER
 NER_MODEL_DIR = Path(settings.BASE_DIR) / "models" / "ner_model"
@@ -25,9 +53,12 @@ ENTITY_LABELS = [
     "GEOGRAPHIC",    # região Norte/Nordeste, área de difícil acesso
     "BEHAVIORAL",    # início precoce atividade sexual, múltiplos parceiros
     "FOLLOW_UP",     # perda de seguimento, ausência de rastreamento
+    "PERSISTENCE",   # modificador para persistência (novo)
+    "AGE",          # idade do paciente (novo)
+    "NEGATION",     # indicador de negação (novo)
 ]
 
-# Dados de treinamento anotados
+# Dados de treinamento anotados (ORIGINAL)
 TRAINING_DATA = [
     ("Paciente com HPV 16 detectado no exame DNA-HPV", {
         "entities": [(14, 20, "HPV_TYPE"), (36, 43, "EXAM")]
@@ -222,12 +253,88 @@ TRAINING_DATA = [
     ("Carga viral de 4.5 milhões de cópias", {
         "entities": [(0, 36, "VIRAL_LOAD")]
     }),
+    
+    # ====== AMPLIFICAÇÃO DE DADOS (Data Augmentation) ======
+    # Exemplos com negação
+    ("DNA-HPV negativo para HPV 16 de alto risco", {
+        "entities": [(0, 7, "EXAM"), (31, 41, "HPV_TYPE")]
+    }),
+    ("Teste de DNA-HPV negativo, sem detecção de HPV oncogênico", {
+        "entities": [(8, 15, "EXAM"), (45, 60, "HPV_TYPE")]
+    }),
+    ("Resultado negativo: ausência de HPV detectado", {
+        "entities": [(18, 29, "HPV_TYPE")]
+    }),
+    ("Não há evidência de HPV 16 ou HPV 18 no exame", {
+        "entities": [(25, 31, "HPV_TYPE"), (35, 41, "HPV_TYPE"), (54, 58, "EXAM")]
+    }),
+    
+    # Exemplos com persistência temporal
+    ("Paciente com HPV 16 persistente há 3 anos, múltiplos testes positivos", {
+        "entities": [(13, 19, "HPV_TYPE"), (46, 50, "EXAM")]
+    }),
+    ("DNA-HPV positivo em janeiro 2022, positivo novamente em março 2024 - persistência confirmada", {
+        "entities": [(0, 7, "EXAM"), (40, 47, "EXAM")]
+    }),
+    ("HPV 31 detectado em 2021 ainda presente em 2024, infecção persistente", {
+        "entities": [(0, 6, "HPV_TYPE")]
+    }),
+    
+    # Exemplos com entidades aninhadas
+    ("HPV 16 (alto risco) com HSIL confirmado em biópsia", {
+        "entities": [(0, 6, "HPV_TYPE"), (9, 19, "HPV_TYPE"), (25, 29, "LESION"), (45, 51, "EXAM")]
+    }),
+    ("DNA-HPV detectou HPV 18 (tipo oncogênico) compatível com lesão de alto grau HSIL", {
+        "entities": [(0, 7, "EXAM"), (17, 23, "HPV_TYPE"), (29, 43, "HPV_TYPE"), (66, 70, "LESION")]
+    }),
+    
+    # Exemplos regionalizados (Bahia/Salvador)
+    ("Mulher moradora de Tororó, bairro de Salvador, com HPV 16 e vulnerabilidade social", {
+        "entities": [(19, 25, "GEOGRAPHIC"), (50, 56, "HPV_TYPE"), (63, 85, "SOCIAL_FACTOR")]
+    }),
+    ("Paciente da Região Norte, escolaridade baixa, apresenta HPV 18 com HSIL", {
+        "entities": [(15, 29, "GEOGRAPHIC"), (31, 49, "SOCIAL_FACTOR"), (61, 67, "HPV_TYPE"), (73, 77, "LESION")]
+    }),
+    ("Residente em zona rural do Nordeste, baixa escolaridade, HSIL + HPV 31", {
+        "entities": [(13, 22, "GEOGRAPHIC"), (25, 37, "GEOGRAPHIC"), (40, 58, "SOCIAL_FACTOR"), (61, 65, "LESION"), (68, 74, "HPV_TYPE")]
+    }),
+    
+    # Exemplos com ruído real
+    ("Resultado de DNA-HPV: positivo para HPV 16. Carga viral: alta. Colposcopia indicada.",
+     {"entities": [(12, 19, "EXAM"), (38, 44, "HPV_TYPE"), (47, 58, "VIRAL_LOAD"), (62, 73, "EXAM")]}),
+    
+    ("Paciente: Não comparecimento às convocações x 2. Último exame DNA-HPV em jan/2023 positivo para HPV de alto risco.",
+     {"entities": [(11, 28, "FOLLOW_UP"), (56, 63, "EXAM"), (80, 99, "HPV_TYPE")]}),
+    
+    # Exemplos com densidade variável
+    ("Colposcopia com múltiplas biópsias revelou NIC 2 e carga viral elevada de HPV 16 oncogênico",
+     {"entities": [(0, 11, "EXAM"), (43, 48, "LESION"), (53, 70, "VIRAL_LOAD"), (74, 80, "HPV_TYPE")]}),
+     
+    # Exemplos com idade e fatores comportamentais
+    ("Mulher de 45 anos com HPV 16, 15 parceiros sexuais, perda de seguimento há 5 anos",
+     {"entities": [(10, 12, "BEHAVIORAL"), (17, 23, "HPV_TYPE"), (26, 48, "BEHAVIORAL"), (51, 70, "FOLLOW_UP")]}),
+     
+    # Exemplos com combinações críticas
+    ("HPV 16 + HPV 18 + HSIL + Paciente residente em região rural do Nordeste com baixa escolaridade",
+     {"entities": [(0, 6, "HPV_TYPE"), (9, 15, "HPV_TYPE"), (18, 22, "LESION"), (47, 56, "GEOGRAPHIC"), (60, 72, "GEOGRAPHIC"), (76, 94, "SOCIAL_FACTOR")]}),
 ]
+
+# Estender TRAINING_DATA com exemplos aprimorados se disponível
+if TRAINING_DATA_AUGMENTED:
+    TRAINING_DATA.extend(TRAINING_DATA_AUGMENTED)
 
 
 def create_ner_model():
     """Cria um novo modelo NER em português."""
     nlp = spacy.blank("pt")
+    
+    # Adicionar EntityRuler se disponível
+    if NER_ENHANCED_AVAILABLE:
+        try:
+            nlp = add_entity_ruler(nlp)
+            print("[NER] ✅ EntityRuler com gazetteers adicionado com sucesso")
+        except Exception as e:
+            print(f"[NER] ⚠️ Erro ao adicionar EntityRuler: {e}")
     
     if "ner" not in nlp.pipe_names:
         ner = nlp.add_pipe("ner")
@@ -603,9 +710,15 @@ def get_training_examples():
     return all_examples
 
 
-def classify_risk_by_entities(entities):
+def classify_risk_by_entities(entities, text: str = ""):
     """
     Classifica risco do paciente baseado nas entidades médicas E socioeconômicas extraídas.
+    
+    Versão aprimorada com:
+    1. Detecção de negação
+    2. Detector de idade
+    3. Detector de persistência
+    4. Matriz de risco aprimorada
     
     Regras de classificação baseadas no projeto de pesquisa sobre desigualdades no CCU:
     
@@ -620,23 +733,94 @@ def classify_risk_by_entities(entities):
     - Fatores geográficos (+1): Região Norte/Nordeste, área de difícil acesso
     - Fatores comportamentais (+1): início precoce atividade sexual, múltiplos parceiros
     - Perda de seguimento (+1): ausência de rastreamento, falha em convocações
+    - Persistência (+2): HPV persistente por >2 anos
     
     Args:
         entities: Dict com entidades extraídas (retorno de extract_entities)
+        text: Texto original para análise de negação, idade e persistência (opcional)
     
     Returns:
-        Tuple (risco: str, justificativa: list, score_total: int)
+        Tuple (risco: str, justificativas: list, score_total: int)
     """
+    
+    # Se ner_enhanced está disponível, usar versão aprimorada
+    if NER_ENHANCED_AVAILABLE and text:
+        try:
+            result = classify_risk_with_matrix(entities, text)
+            return (
+                result['risk_level'],
+                result['justifications'],
+                result['score']
+            )
+        except Exception as e:
+            print(f"[NER] ⚠️ Erro na classificação aprimorada: {e}")
+            # Fallback para versão original
+    
+    # === VERSÃO ORIGINAL (COM MELHORIAS INCREMENTAIS) ===
+    
     score_clinico = 0
     score_vulnerabilidade = 0
     justificativas_clinicas = []
     justificativas_vulnerabilidade = []
     
+    # === TRATAMENTO DE NEGAÇÃO (MELHORADO) ===
+    # Filtra entidades que estão sob escopo de negação
+    hpv_types_validos = []
+    lesions_validos = []
+    
+    for hpv in entities.get('hpv_types', []):
+        is_negated = False
+        if text and NER_ENHANCED_AVAILABLE:
+            try:
+                pos = text.find(hpv)
+                if pos >= 0:
+                    is_negated = detect_negation(text, pos, pos + len(hpv), window=5)
+            except:
+                pass
+        
+        if not is_negated:
+            hpv_types_validos.append(hpv)
+    
+    for lesion in entities.get('lesions', []):
+        is_negated = False
+        if text and NER_ENHANCED_AVAILABLE:
+            try:
+                pos = text.find(lesion)
+                if pos >= 0:
+                    is_negated = detect_negation(text, pos, pos + len(lesion), window=5)
+            except:
+                pass
+        
+        if not is_negated:
+            lesions_validos.append(lesion)
+    
+    # === DETECÇÃO DE IDADE (NOVO) ===
+    age_info = None
+    if text and NER_ENHANCED_AVAILABLE:
+        try:
+            age, age_type = extract_age(text)
+            if age:
+                age_info = {"age": age, "type": age_type, "is_high_risk": age > 30}
+        except:
+            pass
+    
+    # === DETECÇÃO DE PERSISTÊNCIA (NOVO) ===
+    persistence_info = None
+    persistence_risk_raise = 0
+    if text and hpv_types_validos and NER_ENHANCED_AVAILABLE:
+        try:
+            persistence_info = detect_persistence(text, entities)
+            if persistence_info.get("has_persistence"):
+                persistence_risk_raise = persistence_info.get("risk_elevation", 2)
+                justificativas_clinicas.append(f"⚠️ Persistência detectada: {'; '.join(persistence_info['evidence'])}")
+        except:
+            pass
+    
     # === RISCO CLÍNICO ===
     
     # HPV de alto risco
     hpv_alto_risco = ['16', '18', '31', '33', '45', '52', '58', 'ALTO RISCO', 'ONCOGENICO']
-    for hpv in entities.get('hpv_types', []):
+    for hpv in hpv_types_validos:
         if any(tipo in hpv.upper() for tipo in hpv_alto_risco):
             score_clinico += 3
             justificativas_clinicas.append(f"🦠 HPV alto risco: {hpv}")
@@ -647,7 +831,7 @@ def classify_risk_by_entities(entities):
                      'CARCINOMA', 'NEOPLASIA']
     lesoes_leves = ['LSIL', 'NIC 1', 'NIC1', 'BAIXO GRAU', 'LOW-GRADE', 'DISPLASIA LEVE']
     
-    for lesion in entities.get('lesions', []):
+    for lesion in lesions_validos:
         if any(grave in lesion.upper() for grave in lesoes_graves):
             score_clinico += 3
             justificativas_clinicas.append(f"⚠️ Lesão grave: {lesion}")
@@ -680,9 +864,9 @@ def classify_risk_by_entities(entities):
         justificativas_clinicas.append(f"⚕️ Procedimento realizado: {', '.join(entities['procedures'])}")
     
     # HPV outros tipos (não alto risco) = risco médio
-    if entities.get('hpv_types') and not any(any(tipo in hpv.upper() for tipo in hpv_alto_risco) for hpv in entities.get('hpv_types', [])):
+    if hpv_types_validos and not any(any(tipo in hpv.upper() for tipo in hpv_alto_risco) for hpv in hpv_types_validos):
         score_clinico += 1
-        justificativas_clinicas.append(f"🦠 HPV detectado: {', '.join(entities['hpv_types'])}")
+        justificativas_clinicas.append(f"🦠 HPV detectado: {', '.join(hpv_types_validos)}")
     
     # === VULNERABILIDADE SOCIAL ===
     
@@ -710,6 +894,15 @@ def classify_risk_by_entities(entities):
         score_vulnerabilidade += 1
         justificativas_vulnerabilidade.append(f"⏰ Alerta de seguimento: {', '.join(entities['follow_up'][:2])}")
     
+    # === FATORES MULTIPLICADORES ===
+    
+    # Idade >30 anos + vulnerabilidade social = risco aumentado
+    if age_info and age_info.get("is_high_risk") and score_vulnerabilidade >= 1:
+        justificativas_vulnerabilidade.append(f"📊 Idade {age_info['age']} anos + vulnerabilidade = risco multiplicado")
+    
+    # Persistência aumenta risco decisivamente
+    score_clinico += persistence_risk_raise
+    
     # === CLASSIFICAÇÃO FINAL ===
     # Score total combina risco clínico + vulnerabilidade social
     score_total = score_clinico + score_vulnerabilidade
@@ -733,6 +926,19 @@ def classify_risk_by_entities(entities):
         justificativas.append("💔 VULNERABILIDADE SOCIAL:")
         justificativas.extend(justificativas_vulnerabilidade)
     
+    # Adicionar informações de idade e persistência se disponível
+    if age_info:
+        if justificativas:
+            justificativas.append("")
+        justificativas.append(f"📊 Idade do paciente: {age_info['age']} anos")
+    
+    if persistence_info and persistence_info.get("has_persistence"):
+        if justificativas:
+            justificativas.append("")
+        justificativas.append("🔄 PERSISTÊNCIA VERIFICADA:")
+        for evidence in persistence_info.get("evidence", []):
+            justificativas.append(f"  - {evidence}")
+    
     # Adicionar resumo de scores ao final
     if score_vulnerabilidade > 0 or score_clinico > 0:
         if justificativas:  # Se já tem algo, adiciona quebra
@@ -754,11 +960,15 @@ def classify_risk_by_entities(entities):
     return risco, justificativas, score_total
 
 
+
 def classify_patient_text(text):
     """
     Classifica o risco de um paciente baseado no texto completo.
-    Extrai entidades médicas E sociais, aplica regras de classificação considerando
-    desigualdades sociais e territoriais (projeto Neila Pierote).
+    Extrai entidades médicas E sociais, aplica regras de classificação considerando:
+    - Desigualdades sociais e territoriais (projeto Neila Pierote)
+    - Tratamento de negação
+    - Persistência de infecção
+    - Fatores de idade
     
     Args:
         text: Texto com informações do paciente
@@ -775,8 +985,8 @@ def classify_patient_text(text):
     # Extrair entidades (clínicas + sociais)
     entidades = extract_entities(text)
     
-    # Classificar baseado nas entidades (risco clínico + vulnerabilidade social)
-    risco, justificativas, score = classify_risk_by_entities(entidades)
+    # Classificar baseado nas entidades (risco clínico + vulnerabilidade social + negação + persistência + idade)
+    risco, justificativas, score = classify_risk_by_entities(entidades, text=text)
     
     return {
         'risco': risco,
