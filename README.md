@@ -23,7 +23,65 @@ Sistema de classificação de risco para rastreamento de câncer do colo do úte
 - **Interface Intuitiva**: Formulários amigáveis para profissionais de saúde
 - **Equity-Focused**: Integração com pesquisa sobre desigualdades (Neila Pierote)
 
-## 🛠️ Instalação
+## � Autenticação JWT
+
+Sistema completo de autenticação baseado em JWT tokens com segurança robusta.
+
+### Endpoints da API
+
+#### Autenticação (Públicos)
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| POST | `/users/api/register/` | Registrar novo usuário |
+| POST | `/users/api/token/` | Login (obter access + refresh tokens) |
+| POST | `/users/api/token/refresh/` | Refrescar access token |
+
+#### Conta (Autenticados - Bearer Token)
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/users/api/profile/` | Obter dados do perfil |
+| PUT | `/users/api/profile/update/` | Atualizar perfil |
+| POST | `/users/api/change-password/` | Trocar senha |
+| GET | `/users/api/login-history/` | Histórico de login (IP, timestamp) |
+| POST | `/users/api/logout/` | Fazer logout (revoga token) |
+| POST | `/users/api/logout-all-devices/` | Logout em todos os dispositivos |
+
+### Teste Rápido (cURL)
+
+```bash
+# 1. Registrar
+curl -X POST http://localhost:8000/users/api/register/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username":"testuser",
+    "email":"test@example.com",
+    "password":"securepass123",
+    "password_confirm":"securepass123"
+  }'
+
+# 2. Login
+curl -X POST http://localhost:8000/users/api/token/ \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser","password":"securepass123"}'
+
+# 3. Usar Token
+curl -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  http://localhost:8000/users/api/profile/
+```
+
+### Segurança JWT
+
+- ✅ **Access Token**: Válido por 1 hora
+- ✅ **Refresh Token**: Válido por 7 dias com rotação automática
+- ✅ **Blacklist de Tokens**: Revogação imediata ao logout
+- ✅ **Rate Limiting**: 100 req/h (anônimo), 1000 req/h (autenticado)
+- ✅ **Headers Seguros**: HSTS, X-Frame-Options, Content-Type-Options
+- ✅ **Histórico de Login**: Rastreamento de IP e tentativas falhadas
+- ✅ **Validação de Senha**: Mínimo 8 caracteres obrigatório
+
+---
+
+## �🛠️ Instalação
 
 ### Pré-requisitos
 - Python 3.9+
@@ -114,6 +172,39 @@ Neila/
 - Veja: Entidades identificadas, Score, Risco classificado
 - Seção "Vulnerabilidade Social" mostra fatores extraídos
 
+### 4. Testar Endpoints JWT
+```bash
+# Registrar novo usuário
+curl -X POST http://localhost:8000/users/api/register/ \
+  -H "Content-Type: application/json" \
+  -d '{"username":"user1","email":"user@example.com","password":"pass123","password_confirm":"pass123"}'
+
+# Login e obter tokens
+curl -X POST http://localhost:8000/users/api/token/ \
+  -H "Content-Type: application/json" \
+  -d '{"username":"user1","password":"pass123"}'
+
+# Usar token para acessar perfil
+MY_TOKEN="eyJ0eXAiOi..." # Token obtido acima
+curl -H "Authorization: Bearer $MY_TOKEN" http://localhost:8000/users/api/profile/
+
+# Trocar senha
+curl -X POST http://localhost:8000/users/api/change-password/ \
+  -H "Authorization: Bearer $MY_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"old_password":"pass123","new_password":"newpass123","confirm_password":"newpass123"}'
+
+# Ver histórico de login
+curl -H "Authorization: Bearer $MY_TOKEN" \
+  http://localhost:8000/users/api/login-history/
+
+# Fazer logout
+curl -X POST http://localhost:8000/users/api/logout/ \
+  -H "Authorization: Bearer $MY_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"refresh":"YOUR_REFRESH_TOKEN"}'
+```
+
 ## 📋 Entidades NER Suportadas
 
 ### Clínicas
@@ -154,6 +245,70 @@ Score Clínico ≥1 AND Vulnerabilidade ≥3 → ALTO RISCO
 - 🟡 **Médio Risco**: Score 1-2
 - 🔴 **Alto Risco**: Score ≥ 3 ou Clínico ≥1 + Social ≥3
 
+### Melhorias Implementadas (v2.0)
+
+#### 1️⃣ Tratamento de Negação
+Evita **falsos positivos** quando HPV/lesão é negada:
+- Detecta: "negativo para HPV", "ausência de lesão", "sem HSIL"
+- Resultado: Entity revogada = Score 0
+- Janela: Analisa 5 palavras antes da entidade
+
+Exemplo:
+```
+❌ "DNA-HPV negativo para HPV 16" → BAIXO RISCO (score 0)
+✅ "DNA-HPV positivo para HPV 16" → ALTO RISCO (score 3+)
+```
+
+#### 2️⃣ Matriz de Risco Refinada
+Classificação baseada em **combinações clínicas**:
+- **🔴 RED (10)**: HPV 16 + HSIL + Vulnerabilidade = Urgente
+- **🟡 YELLOW (6-7)**: HPV alto risco + lesão moderada
+- **🟢 GREEN (1-2)**: Negativo ou achados benignos
+
+#### 3️⃣ Detecção de Persistência
+Identifica **lesões crônicas** (risco aumentado):
+- Padrões: "há 3 anos", "positivo em 2021 e 2024"
+- Resultado: +2 pontos automáticos se > 2 anos
+- Multiplica risco em idade > 30 anos
+
+Exemplo:
+```
+Score base: 5
++ Persistência 3 anos: +2
+= SCORE FINAL: 7 (YELLOW/Risco moderado-alto)
+```
+
+#### 4️⃣ EntityRuler com Gazetteers
+**100% accuracy** para termos conhecidos (ANTES do modelo):
+- **HPV**: 16, 18, 31, 33, 45, 52, 58 (20+ variações)
+- **Lesões**: HSIL, LSIL, NIC I-III, Carcinoma (15+ variações)
+- **Procedimentos**: CAF, Conização, LEEP, Histerectomia (10+)
+- **Localizações**: 30+ bairros de Salvador + regiões (Nordeste, Norte)
+- **Exames**: DNA-HPV, Citopatológico, Colposcopia, Ultrassom
+
+Vantagem: Conhecimento clínico puro = sem incerteza estatística
+
+#### 5️⃣ Extração de Idade
+Múltiplos padrões de extração:
+- "Paciente 35 anos"
+- "Nascida em 1990"
+- "Idade 42"
+
+Impacto: Idade > 30 multiplica risco social (prognóstico pior)
+
+### Dados de Treinamento Aumentados
+
+- **Dataset original**: 120 exemplos
+- **Dataset aumentado**: 200+ exemplos (+67%)
+- **Cobertura**: 5 categorias de exemplos
+  - Negação: "negativo", "sem HSIL", "desfrenhância"
+  - Persistência: "há 3 anos", "crônico", "recorrente"
+  - Variações regionais: Bairros de Salvador, Bahia
+  - Exemplos complexos: Múltiplas entidades aninhadas
+  - Textos ruidosos: Variações reais de relatórios médicos
+
+---
+
 ## 🔄 Reclassificar Pacientes Existentes
 
 ```bash
@@ -167,11 +322,75 @@ python manage.py reclassificar_pacientes
 python manage.py reclassificar_pacientes --paciente-id 1
 ```
 
+## 🧪 Testes Automatizados
+
+### Testar NER v2.0 (Melhorias)
+```bash
+# Suite completa de testes NER
+python manage.py test_ner_improvements
+
+# Com output verboso
+python manage.py test_ner_improvements --verbose
+
+# Modo rápido (testes essenciais)
+python manage.py test_ner_improvements --quick
+```
+
+### Testar Endpoints JWT
+```bash
+# Suite completa de testes JWT (19 testes)
+python manage.py test users.test_jwt --verbosity=2
+
+# Testes específicos
+python manage.py test users.test_jwt.JWTLoginTestCase
+python manage.py test users.test_jwt.JWTSecurityTestCase
+```
+
+---
+
+## 🤖 Sistema de Classificação Anterior
+
+
+
+## 🧪 Testes Automatizados
+
+### Testar NER v2.0 (Melhorias)
+```bash
+# Suite completa de testes NER
+python manage.py test_ner_improvements
+
+# Com output verboso
+python manage.py test_ner_improvements --verbose
+
+# Modo rápido (testes essenciais)
+python manage.py test_ner_improvements --quick
+```
+
+### Testar Endpoints JWT
+```bash
+# Suite completa de testes JWT (19 testes)
+python manage.py test users.test_jwt --verbosity=2
+
+# Testes específicos
+python manage.py test users.test_jwt.JWTLoginTestCase
+python manage.py test users.test_jwt.JWTSecurityTestCase
+```
+
+---
+
+
+
 ## 📦 Dependências Principais
 
 - **Django 5.2**: Framework web
 - **spaCy 3.7+**: NER (único engine de classificação)
 - **PyPDF2 3.0+**: Extração de texto de PDFs
+- **djangorestframework>=3.14.0**: REST API
+- **djangorestframework-simplejwt>=5.3.0**: JWT tokens
+- **PyJWT>=2.8.0**: Validação de tokens
+- **negspacy>=1.0.0**: Detecção de negação (v2.0)
+- **python-dateutil>=2.8.0**: Parsing de datas (persistência)
+- **regex>=2024.0.0**: Padrões regex robustos
 
 ## 🔐 Segurança
 
@@ -205,4 +424,5 @@ Para dúvidas ou sugestões sobre o projeto, entre em contato através do email 
 
 ---
 
-**Última atualização**: Fevereiro de 2026
+**Última atualização**: Março de 2026
+

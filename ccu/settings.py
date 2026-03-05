@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
     'feedIA',
     'users',
     'pacientes',
@@ -58,6 +60,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'users.middleware.JWTTokenValidationMiddleware',  # Valida tokens revogados
+    'users.middleware.SecurityHeadersMiddleware',  # Adiciona headers de segurança
+    'users.middleware.RateLimitMiddleware',  # Rate limiting para endpoints sensíveis
 ]
 
 ROOT_URLCONF = 'ccu.urls'
@@ -186,4 +191,49 @@ LOGGING = {
             'propagate': False,
         },
     },
+}
+
+# JWT Configuration
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),  # Token de acesso válido por 1 hora
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),  # Token de refresh válido por 7 dias
+    'ROTATE_REFRESH_TOKENS': True,  # Rotaciona refresh token a cada refresh
+    'BLACKLIST_AFTER_ROTATION': True,  # Blacklist o token antigo após rotação
+    'UPDATE_LAST_LOGIN': True,  # Atualiza last_login no login
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    'JTI_CLAIM': 'jti',
+}
+
+# REST Framework Configuration
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 100,
+    'DEFAULT_FILTER_BACKENDS': (
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ),
+    'DEFAULT_THROTTLE_CLASSES': (
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',  # 100 requisições por hora para usuários anônimos
+        'user': '1000/hour'  # 1000 requisições por hora para usuários autenticados
+    }
 }
