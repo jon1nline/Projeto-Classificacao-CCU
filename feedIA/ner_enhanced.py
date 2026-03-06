@@ -411,6 +411,8 @@ def classify_risk_with_matrix(entities: Dict, text: str = "", nlp=None) -> Dict:
     Returns:
         Dict com classificação completa e detalhes
     """
+    entities = entities or {}
+
     result = {
         "risk_level": "baixo",
         "score": 0,
@@ -504,9 +506,11 @@ def classify_risk_with_matrix(entities: Dict, text: str = "", nlp=None) -> Dict:
     # === DETERMINAÇÃO DO NÍVEL DE RISCO ===
     
     # Verificar condições críticas (red_alert)
+    persistence_info = result.get("persistence_info") or {}
+
     red_conditions = [
         (hpv_alto_risco_count > 0 and any("HSIL" in l.upper() for l in entities.get('lesions', [])) and social_score >= 3),
-        (result.get("persistence_info", {}).get("has_persistence") and hpv_alto_risco_count > 0 and social_score >= 3),
+        (persistence_info.get("has_persistence") and hpv_alto_risco_count > 0 and social_score >= 3),
         (any("NIC 2" in l.upper() or "NIC 3" in l.upper() for l in entities.get('lesions', [])) and entities.get('follow_up'))
     ]
     

@@ -743,6 +743,19 @@ def classify_risk_by_entities(entities, text: str = ""):
         Tuple (risco: str, justificativas: list, score_total: int)
     """
     
+    entities = entities or {
+        "hpv_types": [],
+        "lesions": [],
+        "exams": [],
+        "procedures": [],
+        "viral_loads": [],
+        "social_factors": [],
+        "geographic": [],
+        "behavioral": [],
+        "follow_up": [],
+        "all_entities": []
+    }
+
     # Se ner_enhanced está disponível, usar versão aprimorada
     if NER_ENHANCED_AVAILABLE and text:
         try:
