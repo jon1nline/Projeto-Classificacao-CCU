@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
+from django.core.management import call_command
 import csv
 from pathlib import Path
 from django.conf import settings
@@ -10,6 +11,7 @@ from .ner import train_ner_model, extract_entities, get_training_examples, class
 import json
 import PyPDF2
 import io
+from io import StringIO
 
 
 def feedback_form(request):
@@ -132,6 +134,9 @@ def treinar_ner(request):
         return redirect('feedback_form')
     
     try:
+        reclassificar_apos_treino = request.POST.get('reclassificar_apos_treino') == 'on'
+        paciente_id_raw = request.POST.get('paciente_id', '').strip()
+
         training_data = get_training_examples()
         
         # Adicionar validação de quantidade mínima
@@ -146,6 +151,33 @@ def treinar_ner(request):
         
         if ok:
             messages.success(request, f'{msg} O modelo está pronto para classificar pacientes!')
+
+            if reclassificar_apos_treino:
+                command_output = StringIO()
+                command_kwargs = {'stdout': command_output}
+
+                if paciente_id_raw:
+                    try:
+                        command_kwargs['paciente_id'] = int(paciente_id_raw)
+                    except ValueError:
+                        messages.error(request, 'ID do paciente inválido para reclassificação. Use apenas números.')
+                        return redirect('feedback_form')
+
+                call_command('reclassificar_pacientes', **command_kwargs)
+
+                resumo_linhas = [
+                    linha.strip()
+                    for linha in command_output.getvalue().splitlines()
+                    if ('Total processado' in linha) or ('Classificados' in linha) or ('Erros' in linha)
+                ]
+
+                if resumo_linhas:
+                    messages.success(
+                        request,
+                        'Reclassificação concluída no banco de produção: ' + ' | '.join(resumo_linhas)
+                    )
+                else:
+                    messages.success(request, 'Reclassificação concluída no banco de produção.')
         else:
             messages.error(request, msg)
     except Exception as exc:

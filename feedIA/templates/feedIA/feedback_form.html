@@ -449,8 +449,31 @@
             
             <form method="POST" action="{% url 'treinar_ner' %}">
                 {% csrf_token %}
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
+                        <input type="checkbox" name="reclassificar_apos_treino" checked style="width: auto;">
+                        Reclassificar pacientes no banco após o treino
+                    </label>
+                    <small style="color: #666; display: block; margin-top: 6px;">
+                        Em produção (PostgreSQL), isso atualiza os registros de risco com o novo modelo NER.
+                    </small>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="paciente_id">ID de paciente (opcional)</label>
+                    <input
+                        type="text"
+                        id="paciente_id"
+                        name="paciente_id"
+                        placeholder="Ex: 15 (deixe vazio para reclassificar todos)"
+                    >
+                    <small style="color: #666; display: block; margin-top: 6px;">
+                        Informe um ID para reclassificar apenas um paciente; vazio reclassifica toda a base.
+                    </small>
+                </div>
+
                 <button type="submit" class="btn-success">
-                    🔍 Treinar Modelo NER (Leva cerca de 1-2 minutos)
+                    🔍 Treinar Modelo NER e Aplicar Reclassificação
                 </button>
             </form>
         </div>
